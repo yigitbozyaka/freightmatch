@@ -1,0 +1,24 @@
+FROM node:20-alpine AS builder
+RUN corepack enable
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY services/user-service/package.json services/user-service/
+COPY shared/contracts/package.json shared/contracts/
+RUN pnpm install --frozen-lockfile
+COPY tsconfig.base.json ./
+COPY services/user-service/tsconfig.json services/user-service/
+COPY services/user-service/src services/user-service/src
+COPY shared/contracts shared/contracts
+RUN pnpm --filter @freightmatch/user-service build
+
+FROM node:20-alpine
+RUN corepack enable
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY services/user-service/package.json services/user-service/
+COPY shared/contracts/package.json shared/contracts/
+RUN pnpm install --frozen-lockfile --prod
+WORKDIR /app/services/user-service
+COPY --from=builder /app/services/user-service/dist ./dist
+EXPOSE 3001
+CMD ["node", "dist/index.js"]
