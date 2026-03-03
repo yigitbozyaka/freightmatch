@@ -19,7 +19,7 @@ export const updateLoadSchema = z.object({
     cargoType: z.string().min(1, 'Cargo type is required').optional(),
     weightKg: z.number().positive('Weight must be positive').optional(),
     deadlineHours: z.number().positive('Deadline must be positive').optional(),
-  }).strict(), // Reject fields not in schema
+  }).strict(),
 });
 
 export const filterLoadSchema = z.object({

@@ -25,3 +25,17 @@ export interface ErrorResponse {
   message: string;
   timestamp: string;
 }
+
+export interface AppError extends Error {
+  statusCode?: number;
+  errorCode?: string;
+}
+
+export interface LoadUpdateData {
+  title?: string;
+  origin?: string;
+  destination?: string;
+  cargoType?: string;
+  weightKg?: number;
+  deadlineHours?: number;
+}

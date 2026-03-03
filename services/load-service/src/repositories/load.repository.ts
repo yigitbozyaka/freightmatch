@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Load, ILoad } from '../models/load.model';
 
 export class LoadRepository {
@@ -31,7 +32,7 @@ export class LoadRepository {
   }
 
   async findAvailable(filters?: { origin?: string; destination?: string; cargoType?: string }): Promise<ILoad[]> {
-    const query: Record<string, any> = { status: 'Posted' };
+    const query: mongoose.FilterQuery<ILoad> = { status: 'Posted' };
     
     if (filters?.origin) {
       query.origin = new RegExp(filters.origin, 'i');

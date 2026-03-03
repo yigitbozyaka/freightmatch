@@ -47,7 +47,6 @@ export class LoadController {
 
   async getAvailableLoads(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // The validation middleware ensures req.query only contains allowed fields
       const filters = req.query as { origin?: string; destination?: string; cargoType?: string };
       const loads = await loadService.getAvailableLoads(filters);
       res.status(200).json(loads);

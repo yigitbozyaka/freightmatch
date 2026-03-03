@@ -9,7 +9,6 @@ const PORT = env.PORT || 3002;
 
 app.use(express.json());
 
-// Healthcheck
 app.get('/', (_req, res) => {
   res.json({ service: 'load-service', status: 'ok' });
 });
@@ -18,10 +17,8 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'load-service', timestamp: new Date().toISOString() });
 });
 
-// Routes
 app.use('/api/loads', loadRouter);
 
-// Global Error Handler
 app.use(errorHandler);
 
 async function startServer() {

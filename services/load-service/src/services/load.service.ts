@@ -1,5 +1,5 @@
 import { loadRepository } from '../repositories/load.repository';
-import { ErrorCode } from '../types';
+import { ErrorCode, LoadUpdateData } from '../types';
 
 export class LoadService {
   async createLoad(shipperId: string, data: {
@@ -28,7 +28,7 @@ export class LoadService {
     return load;
   }
 
-  async updateLoad(id: string, shipperId: string, updates: any) {
+  async updateLoad(id: string, shipperId: string, updates: LoadUpdateData) {
     const load = await this.getLoadById(id);
 
     if (load.shipperId !== shipperId) {

@@ -6,7 +6,6 @@ import { createLoadSchema, updateLoadSchema, filterLoadSchema } from '../schemas
 
 const router = Router();
 
-// Carrier: Browse available loads
 router.get(
   '/available',
   authenticate,
@@ -15,7 +14,6 @@ router.get(
   loadController.getAvailableLoads
 );
 
-// Shipper: Get their own loads
 router.get(
   '/my-loads',
   authenticate,
@@ -23,7 +21,6 @@ router.get(
   loadController.getMyLoads
 );
 
-// Shipper: Create a new load
 router.post(
   '/',
   authenticate,
@@ -32,14 +29,12 @@ router.post(
   loadController.createLoad
 );
 
-// Any authenticated: Get load by ID
 router.get(
   '/:id',
   authenticate,
   loadController.getLoadById
 );
 
-// Shipper: Update draft load
 router.patch(
   '/:id',
   authenticate,
@@ -48,7 +43,6 @@ router.patch(
   loadController.updateLoad
 );
 
-// Shipper: Delete draft load
 router.delete(
   '/:id',
   authenticate,
