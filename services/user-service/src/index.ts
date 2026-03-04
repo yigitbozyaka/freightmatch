@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { connectDB, isDBConnected } from './config/db';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
+import carrierRoutes from './routes/carrier.routes';
 import { ErrorCode } from './types';
 
 const app = express();
@@ -22,6 +23,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.use('/api/users', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/carriers', carrierRoutes);
 
 app.use((err: Error & { statusCode?: number; errorCode?: string }, _req: Request, res: Response, _next: NextFunction) => {
   const statusCode = err.statusCode || 500;
