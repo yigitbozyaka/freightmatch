@@ -2,6 +2,7 @@
 
 Microservices-based freight matching platform connecting shippers with carriers in real time.
 
+
 ![CI](https://github.com/yigitbozyaka/freightmatch/actions/workflows/ci.yml/badge.svg)
 
 ## Architecture
