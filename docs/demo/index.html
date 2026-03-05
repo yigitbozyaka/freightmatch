@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html lang="tr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FreightMatch Concept</title>
+
+    <style>
+
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 40px; }
+
+        .container { max-width: 900px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+
+        h1 { color: var(--primary); margin-bottom: 5px; }
+
+        .subtitle { font-size: 1.2em; color: #64748b; margin-bottom: 40px; }
+
+       
+
+        section { margin-bottom: 40px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; }
+
+        h2 { border-left: 4px solid var(--primary); padding-left: 15px; }
+
+
+
+        /* How it Works List */
+
+        .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+
+        .step { background: #eff6ff; padding: 15px; border-radius: 8px; font-weight: 500; text-align: center; }
+
+
+
+        /* System Diagram with CSS */
+
+        .diagram { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 40px 0; overflow-x: auto; }
+
+        .box { border: 2px solid var(--primary); padding: 15px; border-radius: 8px; background: white; font-weight: bold; min-width: 120px; text-align: center; }
+
+        .arrow { font-size: 24px; color: var(--primary); }
+
+
+
+        /* Tech Stack Tags */
+
+        .tags { display: flex; flex-wrap: wrap; gap: 10px; }
+
+        .tag { background: #334155; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.9em; }
+
+
+
+        .team-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+        .role { font-size: 0.8em; color: var(--primary); font-weight: bold; text-transform: uppercase; }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header>
+
+            <h1>FreightMatch</h1>
+
+            <p class="subtitle">Yük sahipleri ile taşıyıcıları yapay zeka ile buluşturan akıllı lojistik ekosistemi.</p>
+
+        </header>
+
+
+
+        <section>
+
+            <h2>Nasıl Çalışır?</h2>
+
+            <div class="steps">
+
+                <div class="step">1. Shipper posts load</div>
+
+                <div class="step">2. Carriers bid</div>
+
+                <div class="step">3. AI recommends</div>
+
+                <div class="step">4. Shipper accepts</div>
+
+                <div class="step">5. Shipment begins</div>
+
+            </div>
+
+        </section>
+
+
+
+        <section>
+
+            <h2>Sistem Mimarisi</h2>
+
+            <div class="diagram">
+
+                <div class="box">User Service</div>
+
+                <div class="arrow">↔</div>
+
+                <div class="box">Load Service</div>
+
+                <div class="arrow">↔</div>
+
+                <div class="box">Bidding Service</div>
+
+                <div class="arrow">↔</div>
+
+                <div class="box">Matching Service</div>
+
+            </div>
+
+            <p style="text-align:center; font-size: 0.9em; color: #64748b;">(Services connected via Kafka & MongoDB)</p>
+
+        </section>
+
+
+
+        <section>
+
+            <h2>Teknoloji Yığını</h2>
+
+            <div class="tags">
+
+                <span class="tag">Node.js</span><span class="tag">TypeScript</span>
+
+                <span class="tag">Express</span><span class="tag">MongoDB</span>
+
+                <span class="tag">Kafka</span><span class="tag">Docker</span>
+
+                <span class="tag">Claude AI</span>
+
+            </div>
+
+        </section>
+
+
+
+        <section style="border:none;">
+
+            <h2>Proje Ekibi</h2>
+
+            <div class="team-grid">
+
+                <div><div class="role">Senior</div><div>Yiğit Bozyaka</div></div>
+
+                <div><div class="role">Mid</div><div>Beytullah Paytar</div></div>
+
+                <div><div class="role">Junior</div><div>İsmet Öndeş</div></div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</body>
+
+</html> 
