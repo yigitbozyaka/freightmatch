@@ -25,3 +25,19 @@ export interface ErrorResponse {
   message: string;
   timestamp: string;
 }
+
+export interface CarrierProfileResponse {
+  truckType: string;
+  capacityKg: number;
+  homeCity: string;
+  rating: number;
+  completedShipments: number;
+}
+
+export interface CarrierResponse {
+  id: string;
+  email: string;
+  role: string;
+  carrierProfile: CarrierProfileResponse | null;
+  createdAt: string;
+}

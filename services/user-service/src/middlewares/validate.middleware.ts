@@ -6,7 +6,9 @@ export const validate = (schema: ZodSchema) => (req: Request, res: Response, nex
   const result = schema.safeParse(req.body);
 
   if (!result.success) {
-    const messages = result.error.errors.map((e) => e.message).join(', ');
+    const messages = result.error.errors
+      .map((e) => `${e.path.join('.')}: ${e.message}`)
+      .join(', ');
     res.status(400).json({
       error: ErrorCode.VALIDATION_ERROR,
       message: messages,
