@@ -3,6 +3,9 @@ RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY services/user-service/package.json services/user-service/
+COPY services/load-service/package.json services/load-service/
+COPY services/bidding-service/package.json services/bidding-service/
+COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.base.json ./
@@ -16,6 +19,9 @@ RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY services/user-service/package.json services/user-service/
+COPY services/load-service/package.json services/load-service/
+COPY services/bidding-service/package.json services/bidding-service/
+COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/services/user-service
