@@ -22,6 +22,12 @@ export const updateLoadSchema = z.object({
   }).strict(),
 });
 
+export const updateStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(['Draft', 'Posted', 'Matched', 'InTransit', 'Delivered', 'Cancelled']),
+  }),
+});
+
 export const filterLoadSchema = z.object({
   query: z.object({
     origin: z.string().optional(),

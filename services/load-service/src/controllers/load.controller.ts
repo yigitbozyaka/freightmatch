@@ -34,6 +34,18 @@ export class LoadController {
     }
   }
 
+  async updateStatus(req: AuthRequest & { params: { id: string } }, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new Error('Unauthorized');
+
+      const { status } = req.body;
+      const load = await loadService.updateStatus(req.params.id, req.user.userId, status);
+      res.status(200).json(load);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async deleteLoad(req: AuthRequest & { params: { id: string } }, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user) throw new Error('Unauthorized');

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { loadController } from '../controllers/load.controller';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
-import { createLoadSchema, updateLoadSchema, filterLoadSchema } from '../schemas/load.schema';
+import { createLoadSchema, updateLoadSchema, updateStatusSchema, filterLoadSchema } from '../schemas/load.schema';
 
 const router = Router();
 
@@ -33,6 +33,14 @@ router.get(
   '/:id',
   authenticate,
   loadController.getLoadById
+);
+
+router.patch(
+  '/:id/status',
+  authenticate,
+  authorize('Shipper'),
+  validate(updateStatusSchema),
+  loadController.updateStatus
 );
 
 router.patch(

@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { env } from './config/env';
 import { loadRouter } from './routes/load.routes';
 import { errorHandler } from './middlewares/error.middleware';
+import { connectProducer, disconnectProducer } from './kafka/producer';
+import { startConsumer, disconnectConsumer } from './kafka/consumer';
 
 const app = express();
 const PORT = env.PORT || 3002;
@@ -26,6 +28,9 @@ async function startServer() {
     await mongoose.connect(env.MONGODB_URI);
     console.log('Connected to MongoDB');
 
+    await connectProducer();
+    await startConsumer();
+
     app.listen(PORT, () => {
       console.log(`load-service running on port ${PORT}`);
     });
@@ -34,5 +39,16 @@ async function startServer() {
     process.exit(1);
   }
 }
+
+async function shutdown() {
+  console.log('Shutting down gracefully...');
+  await disconnectProducer();
+  await disconnectConsumer();
+  await mongoose.disconnect();
+  process.exit(0);
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 startServer();

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Load, ILoad } from '../models/load.model';
+import { Load, ILoad, LoadStatus } from '../models/load.model';
 
 export class LoadRepository {
   async findById(id: string): Promise<ILoad | null> {
@@ -21,6 +21,23 @@ export class LoadRepository {
 
   async update(id: string, data: Partial<ILoad>): Promise<ILoad | null> {
     return Load.findByIdAndUpdate(id, data, { new: true });
+  }
+
+  async updateStatus(id: string, fromStatus: LoadStatus, toStatus: LoadStatus): Promise<ILoad | null> {
+    return Load.findByIdAndUpdate(
+      id,
+      {
+        status: toStatus,
+        $push: {
+          statusHistory: {
+            from: fromStatus,
+            to: toStatus,
+            timestamp: new Date(),
+          },
+        },
+      },
+      { new: true },
+    );
   }
 
   async delete(id: string): Promise<ILoad | null> {
