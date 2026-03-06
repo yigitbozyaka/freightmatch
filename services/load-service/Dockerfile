@@ -24,6 +24,7 @@ COPY services/user-service/package.json services/user-service/
 COPY services/bidding-service/package.json services/bidding-service/
 COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
+COPY --from=builder /app/shared/contracts/dist shared/contracts/dist
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/services/load-service
 COPY --from=builder /app/services/load-service/dist ./dist
