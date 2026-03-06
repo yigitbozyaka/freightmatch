@@ -75,9 +75,24 @@ importers:
 
   services/matching-service:
     dependencies:
+      '@freightmatch/contracts':
+        specifier: workspace:*
+        version: link:../../shared/contracts
+      dotenv:
+        specifier: ^16.6.1
+        version: 16.6.1
       express:
         specifier: ^4.21.0
         version: 4.22.1
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
+      mongoose:
+        specifier: ^8.23.0
+        version: 8.23.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@types/express':
         specifier: ^5.0.0

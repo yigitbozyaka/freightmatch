@@ -14,55 +14,34 @@ jobs:
 
     steps:
       - name: Checkout code
-
         uses: actions/checkout@v4
-
         with:
           fetch-depth: 0
 
       - name: Setup pnpm
-
-        uses: pnpm/action-setup@v2
-
-        with:
-          version: 8
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js 20
-
         uses: actions/setup-node@v4
-
         with:
           node-version: 20
-
           cache: "pnpm"
 
       - name: Install dependencies
-
         run: pnpm install
 
       - name: Detect Changed Services
-
         uses: dorny/paths-filter@v3
-
         id: filter
-
         with:
           filters: |
-
             user:
-
               - 'services/user-service/**'
-
             load:
-
               - 'services/load-service/**'
-
             bidding:
-
               - 'services/bidding-service/**'
-
             matching:
-
               - 'services/matching-service/**'
 
       - name: Build User Service
