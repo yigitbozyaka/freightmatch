@@ -10,9 +10,11 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@freightmatch/contracts": "workspace:*",
     "dotenv": "^16.6.1",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.3",
+    "kafkajs": "^2.2.4",
     "mongoose": "^8.23.0",
     "zod": "^3.25.76"
   },

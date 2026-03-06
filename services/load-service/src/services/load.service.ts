@@ -1,5 +1,8 @@
+import { KAFKA_TOPICS } from '@freightmatch/contracts';
 import { loadRepository } from '../repositories/load.repository';
 import { ErrorCode, LoadUpdateData } from '../types';
+import { LoadStatus, VALID_TRANSITIONS } from '../models/load.model';
+import { publishEvent } from '../kafka/producer';
 
 export class LoadService {
   async createLoad(shipperId: string, data: {
@@ -68,6 +71,55 @@ export class LoadService {
 
     await loadRepository.delete(id);
     return { success: true };
+  }
+
+  async updateStatus(id: string, shipperId: string, newStatus: LoadStatus) {
+    const load = await this.getLoadById(id);
+
+    if (load.shipperId !== shipperId) {
+      const error = new Error('Not authorized to update this load') as Error & { statusCode: number; errorCode: string };
+      error.statusCode = 403;
+      error.errorCode = ErrorCode.FORBIDDEN;
+      throw error;
+    }
+
+    this.validateTransition(load.status, newStatus);
+
+    const updatedLoad = await loadRepository.updateStatus(id, load.status, newStatus);
+
+    if (newStatus === 'Posted' && updatedLoad) {
+      await publishEvent(KAFKA_TOPICS.LOAD_CREATED, {
+        eventType: KAFKA_TOPICS.LOAD_CREATED,
+        loadId: updatedLoad._id.toString(),
+        origin: updatedLoad.origin,
+        destination: updatedLoad.destination,
+        cargoType: updatedLoad.cargoType,
+        weightKg: updatedLoad.weightKg,
+        deadlineHours: updatedLoad.deadlineHours,
+        shipperId: updatedLoad.shipperId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return updatedLoad;
+  }
+
+  async transitionStatus(id: string, newStatus: LoadStatus) {
+    const load = await this.getLoadById(id);
+    this.validateTransition(load.status, newStatus);
+    return loadRepository.updateStatus(id, load.status, newStatus);
+  }
+
+  private validateTransition(currentStatus: LoadStatus, newStatus: LoadStatus): void {
+    const allowed = VALID_TRANSITIONS[currentStatus];
+    if (!allowed.includes(newStatus)) {
+      const error = new Error(
+        `Invalid status transition from '${currentStatus}' to '${newStatus}'`,
+      ) as Error & { statusCode: number; errorCode: string };
+      error.statusCode = 409;
+      error.errorCode = ErrorCode.CONFLICT;
+      throw error;
+    }
   }
 
   async getAvailableLoads(filters?: { origin?: string; destination?: string; cargoType?: string }) {
