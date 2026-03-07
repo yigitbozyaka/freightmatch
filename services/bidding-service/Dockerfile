@@ -12,6 +12,7 @@ COPY tsconfig.base.json ./
 COPY services/bidding-service/tsconfig.json services/bidding-service/
 COPY services/bidding-service/src services/bidding-service/src
 COPY shared/contracts shared/contracts
+RUN pnpm --filter @freightmatch/contracts build
 RUN pnpm --filter @freightmatch/bidding-service build
 
 FROM node:20-alpine
@@ -23,6 +24,7 @@ COPY services/user-service/package.json services/user-service/
 COPY services/load-service/package.json services/load-service/
 COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
+COPY --from=builder /app/shared/contracts/dist shared/contracts/dist
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/services/bidding-service
 COPY --from=builder /app/services/bidding-service/dist ./dist
