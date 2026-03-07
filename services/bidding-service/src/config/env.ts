@@ -8,7 +8,7 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
   KAFKA_BROKER: z.string().default('localhost:29092'),
-  LOAD_SERVICE_URL: z.string().default('http://load-service:3002'),
+  LOAD_SERVICE_URL: z.string().default('http://localhost:3002'),
 });
 
 const parsed = envSchema.safeParse(process.env);
