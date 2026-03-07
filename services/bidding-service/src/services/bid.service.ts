@@ -60,12 +60,6 @@ export class BidService {
       throw error;
     }
 
-    // old code
-    
-    // const acceptedBid = await bidRepository.updateStatus(bidId, 'Accepted');
-    // await bidRepository.rejectAllExcept(bid.loadId, bidId);
-
-    // new code - for atomicity
     const session = await mongoose.startSession();
     let acceptedBid;
 
@@ -73,19 +67,19 @@ export class BidService {
       await session.withTransaction(async () => {
         acceptedBid = await bidRepository.updateStatus(bidId, 'Accepted', session);
         await bidRepository.rejectAllExcept(bid.loadId, bidId, session);
+
+        await publishEvent(KAFKA_TOPICS.BID_ACCEPTED, {
+          eventType: KAFKA_TOPICS.BID_ACCEPTED,
+          bidId: bid._id.toString(),
+          loadId: bid.loadId,
+          carrierId: bid.carrierId,
+          priceUSD: bid.priceUSD,
+          timestamp: new Date().toISOString(),
+        });
       });
     } finally {
       await session.endSession();
     }
-
-    await publishEvent(KAFKA_TOPICS.BID_ACCEPTED, {
-      eventType: KAFKA_TOPICS.BID_ACCEPTED,
-      bidId: bid._id.toString(),
-      loadId: bid.loadId,
-      carrierId: bid.carrierId,
-      priceUSD: bid.priceUSD,
-      timestamp: new Date().toISOString(),
-    });
 
     return acceptedBid;
   }

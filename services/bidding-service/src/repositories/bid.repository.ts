@@ -28,23 +28,6 @@ export class BidRepository {
     return Bid.findOne({ loadId, carrierId });
   }
 
-  // old code
-  /*
-  
-   async updateStatus(id: string, status: BidStatus): Promise<IBid | null> {
-    return Bid.findByIdAndUpdate(id, { status }, { new: true });
-  }
-
-  async rejectAllExcept(loadId: string, acceptedBidId: string): Promise<void> {
-    await Bid.updateMany(
-      { loadId, _id: { $ne: acceptedBidId }, status: 'Pending' },
-      { status: 'Rejected' },
-    );
-  }
-  
-  */
-
-  // new code
   async updateStatus(id: string, status: BidStatus, session?: ClientSession): Promise<IBid | null> {
     return Bid.findByIdAndUpdate(id, { status }, { new: true, session });
   }
