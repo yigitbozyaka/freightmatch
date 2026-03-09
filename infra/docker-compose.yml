@@ -35,6 +35,12 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: kafka-topics --bootstrap-server localhost:9092 --list || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
 
   user-service:
     build:
@@ -43,8 +49,10 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      - mongodb
-      - kafka
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     env_file:
       - ../services/user-service/.env
 
@@ -55,8 +63,10 @@ services:
     ports:
       - "3002:3002"
     depends_on:
-      - mongodb
-      - kafka
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     env_file:
       - ../services/load-service/.env
 
@@ -67,8 +77,10 @@ services:
     ports:
       - "3003:3003"
     depends_on:
-      - mongodb
-      - kafka
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     env_file:
       - ../services/bidding-service/.env
 
@@ -79,8 +91,10 @@ services:
     ports:
       - "3004:3004"
     depends_on:
-      - mongodb
-      - kafka
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
     env_file:
       - ../services/matching-service/.env
 
