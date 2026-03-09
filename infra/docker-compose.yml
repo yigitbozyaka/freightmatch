@@ -5,6 +5,13 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    command: ["--replSet", "rs0"]
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh --quiet
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
