@@ -53,3 +53,12 @@ export function authorize(...allowedRoles: Array<'Shipper' | 'Carrier'>) {
     next();
   };
 }
+
+export function authenticateOrInternal(req: AuthRequest, res: Response, next: NextFunction): void {
+  const internalHeader = req.headers['x-internal-request'];
+  if (internalHeader) {
+    return next();
+  }
+
+  authenticate(req, res, next);
+}

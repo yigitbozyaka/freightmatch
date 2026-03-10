@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { loadController } from '../controllers/load.controller';
-import { authenticate, authorize } from '../middlewares/auth.middleware';
+import { authenticate, authorize, authenticateOrInternal } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { createLoadSchema, updateLoadSchema, updateStatusSchema, filterLoadSchema } from '../schemas/load.schema';
 
@@ -31,7 +31,7 @@ router.post(
 
 router.get(
   '/:id',
-  authenticate,
+  authenticateOrInternal,
   loadController.getLoadById
 );
 
