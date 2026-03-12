@@ -1,0 +1,30 @@
+{
+  "name": "@freightmatch/bidding-service",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@freightmatch/contracts": "workspace:*",
+    "axios": "^1.7.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.3",
+    "kafkajs": "^2.2.4",
+    "mongoose": "^8.23.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

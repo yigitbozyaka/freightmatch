@@ -1,0 +1,7 @@
+packages:
+  - services/*
+  - shared/*
+  - infra/seed
+
+onlyBuiltDependencies:
+  - bcrypt

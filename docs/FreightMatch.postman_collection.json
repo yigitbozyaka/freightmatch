@@ -1,0 +1,1158 @@
+{
+	"info": {
+		"_postman_id": "freightmatch-collection-2026",
+		"name": "FreightMatch",
+		"description": "Complete API collection for the FreightMatch freight-matching platform.\n\n**Setup:**\n1. Run requests in order — Register → Login → then the rest\n2. Login scripts auto-save tokens AND user IDs\n3. Create Load / Create Bid scripts auto-save the created resource IDs\n4. Every request uses the correct dynamic variables — no manual copy-paste needed\n\n**Roles:**\n- **Shipper**: Create/manage loads, view/accept bids\n- **Carrier**: View available loads, place bids, manage carrier profile\n\n**Base URL:** `http://localhost:80` (Nginx gateway)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:80",
+			"type": "string"
+		},
+		{
+			"key": "shipperAuthToken",
+			"value": "(auto-filled after Shipper login)",
+			"type": "string"
+		},
+		{
+			"key": "carrierAuthToken",
+			"value": "(auto-filled after Carrier login)",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "(auto-filled after login)",
+			"type": "string"
+		},
+		{
+			"key": "shipperId",
+			"value": "(auto-filled after Shipper login)",
+			"type": "string"
+		},
+		{
+			"key": "carrierId",
+			"value": "(auto-filled after Carrier login)",
+			"type": "string"
+		},
+		{
+			"key": "loadId",
+			"value": "(auto-filled after Create Load)",
+			"type": "string"
+		},
+		{
+			"key": "bidId",
+			"value": "(auto-filled after Create Bid)",
+			"type": "string"
+		},
+		{
+			"key": "draftLoadId",
+			"value": "(auto-filled after Create Draft Load)",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "User Service",
+			"description": "Handles user registration, authentication, token refresh, profile retrieval, and carrier profile management.",
+			"item": [
+				{
+					"name": "Register Shipper",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"shipper@freightmatch.com\",\n  \"password\": \"Shipper123!\",\n  \"role\": \"Shipper\"\n}"
+						},
+						"description": "Register a new user with the **Shipper** role."
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"id\": \"665a1b2c3d4e5f6789012345\",\n  \"email\": \"shipper@freightmatch.com\",\n  \"role\": \"Shipper\",\n  \"createdAt\": \"2026-03-09T10:00:00.000Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Register Carrier",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"carrier@freightmatch.com\",\n  \"password\": \"Carrier123!\",\n  \"role\": \"Carrier\"\n}"
+						},
+						"description": "Register a new user with the **Carrier** role."
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"createdAt\": \"2026-03-09T10:01:00.000Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Login Shipper",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const res = pm.response.json();",
+									"    pm.collectionVariables.set('shipperAuthToken', res.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', res.refreshToken);",
+									"    pm.collectionVariables.set('shipperId', res.user.id);",
+									"    console.log('✅ Shipper token + ID saved');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"shipper@freightmatch.com\",\n  \"password\": \"Shipper123!\"\n}"
+						},
+						"description": "Login as a **Shipper**. Auto-saves `shipperAuthToken`, `refreshToken`, and `shipperId`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": \"665a1b2c3d4e5f6789012345\",\n    \"email\": \"shipper@freightmatch.com\",\n    \"role\": \"Shipper\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Login Carrier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const res = pm.response.json();",
+									"    pm.collectionVariables.set('carrierAuthToken', res.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', res.refreshToken);",
+									"    pm.collectionVariables.set('carrierId', res.user.id);",
+									"    console.log('✅ Carrier token + ID saved');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"carrier@freightmatch.com\",\n  \"password\": \"Carrier123!\"\n}"
+						},
+						"description": "Login as a **Carrier**. Auto-saves `carrierAuthToken`, `refreshToken`, and `carrierId`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": \"665a1b2c3d4e5f6789012346\",\n    \"email\": \"carrier@freightmatch.com\",\n    \"role\": \"Carrier\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"refresh"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"description": "Exchange a valid refresh token for a new access token."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						},
+						"description": "Get the authenticated user's own profile. Uses `shipperAuthToken` — swap to `carrierAuthToken` for carrier profile."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012345\",\n  \"email\": \"shipper@freightmatch.com\",\n  \"role\": \"Shipper\",\n  \"createdAt\": \"2026-03-09T10:00:00.000Z\",\n  \"updatedAt\": \"2026-03-09T10:00:00.000Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{carrierId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{carrierId}}"
+							]
+						},
+						"description": "Get a user by ID. Uses `{{carrierId}}` (auto-filled from Carrier login). Swap to `{{shipperId}}` to look up the shipper."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"createdAt\": \"2026-03-09T10:01:00.000Z\",\n  \"updatedAt\": \"2026-03-09T10:01:00.000Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Carrier Profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{carrierAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/carrier-profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"carrier-profile"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"truckType\": \"refrigerated\",\n  \"capacityKg\": 18000,\n  \"homeCity\": \"Istanbul\"\n}"
+						},
+						"description": "Update carrier profile. **Carrier role required.** Valid truck types: `flatbed`, `refrigerated`, `dry-van`, `tanker`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Carriers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-internal-request",
+								"value": "true"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/carriers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"carriers"
+							]
+						},
+						"description": "List all carriers. Uses `x-internal-request` header (internal service-to-service auth)."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n  {\n    \"_id\": \"665a1b2c3d4e5f6789012346\",\n    \"email\": \"carrier@freightmatch.com\",\n    \"role\": \"Carrier\",\n    \"carrierProfile\": {\n      \"truckType\": \"refrigerated\",\n      \"capacityKg\": 18000,\n      \"homeCity\": \"Istanbul\",\n      \"rating\": 0,\n      \"completedShipments\": 0\n    }\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Carrier by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-internal-request",
+								"value": "true"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/carriers/{{carrierId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"carriers",
+								"{{carrierId}}"
+							]
+						},
+						"description": "Get a carrier by ID. Uses `x-internal-request` header and `{{carrierId}}`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0\n  }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Load Service",
+			"description": "Manages freight loads — creation, retrieval, updates, deletion, status transitions, and carrier-facing available load listings.",
+			"item": [
+				{
+					"name": "Create Load",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.collectionVariables.set('loadId', res._id);",
+									"    console.log('✅ loadId saved: ' + res._id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Refrigerated Dairy Products - Istanbul to Ankara\",\n  \"origin\": \"Istanbul\",\n  \"destination\": \"Ankara\",\n  \"cargoType\": \"Perishable Goods\",\n  \"weightKg\": 12000,\n  \"deadlineHours\": 24\n}"
+						},
+						"description": "Create a new load. **Shipper role required.** Auto-saves `loadId`."
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665b2c3d4e5f67890123abcd\",\n  \"shipperId\": \"665a1b2c3d4e5f6789012345\",\n  \"title\": \"Refrigerated Dairy Products - Istanbul to Ankara\",\n  \"origin\": \"Istanbul\",\n  \"destination\": \"Ankara\",\n  \"cargoType\": \"Perishable Goods\",\n  \"weightKg\": 12000,\n  \"deadlineHours\": 24,\n  \"status\": \"Draft\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Load by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads/{{loadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads",
+								"{{loadId}}"
+							]
+						},
+						"description": "Get a load by ID. Uses `{{loadId}}`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665b2c3d4e5f67890123abcd\",\n  \"shipperId\": \"665a1b2c3d4e5f6789012345\",\n  \"title\": \"Refrigerated Dairy Products - Istanbul to Ankara\",\n  \"origin\": \"Istanbul\",\n  \"destination\": \"Ankara\",\n  \"cargoType\": \"Perishable Goods\",\n  \"weightKg\": 12000,\n  \"deadlineHours\": 24,\n  \"status\": \"Draft\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Load",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads/{{loadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads",
+								"{{loadId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated - Refrigerated Dairy Products Istanbul to Izmir\",\n  \"destination\": \"Izmir\",\n  \"weightKg\": 15000\n}"
+						},
+						"description": "Partial update a load. **Shipper role required.** Uses `{{loadId}}`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665b2c3d4e5f67890123abcd\",\n  \"title\": \"Updated - Refrigerated Dairy Products Istanbul to Izmir\",\n  \"destination\": \"Izmir\",\n  \"weightKg\": 15000\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Load Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads/{{loadId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads",
+								"{{loadId}}",
+								"status"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Posted\"\n}"
+						},
+						"description": "Transition load status. **Shipper role required.** Uses `{{loadId}}`. Valid: Draft→Posted→Matched→InTransit→Delivered."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665b2c3d4e5f67890123abcd\",\n  \"status\": \"Posted\",\n  \"statusHistory\": [\n    { \"from\": null, \"to\": \"Draft\" },\n    { \"from\": \"Draft\", \"to\": \"Posted\" }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Available Loads",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{carrierAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads/available?origin=Istanbul&destination=Ankara&cargoType=Perishable Goods",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads",
+								"available"
+							],
+							"query": [
+								{
+									"key": "origin",
+									"value": "Istanbul",
+									"description": "Filter by origin (optional)"
+								},
+								{
+									"key": "destination",
+									"value": "Ankara",
+									"description": "Filter by destination (optional)"
+								},
+								{
+									"key": "cargoType",
+									"value": "Perishable Goods",
+									"description": "Filter by cargo type (optional)"
+								}
+							]
+						},
+						"description": "List available (Posted) loads. **Carrier role required.** Optional query filters."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n  {\n    \"_id\": \"665b2c3d4e5f67890123abcd\",\n    \"title\": \"Refrigerated Dairy Products - Istanbul to Ankara\",\n    \"origin\": \"Istanbul\",\n    \"destination\": \"Ankara\",\n    \"status\": \"Posted\"\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get My Loads",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads/my-loads",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads",
+								"my-loads"
+							]
+						},
+						"description": "List all loads by the authenticated shipper. **Shipper role required.**"
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n  {\n    \"_id\": \"665b2c3d4e5f67890123abcd\",\n    \"title\": \"Refrigerated Dairy Products - Istanbul to Ankara\",\n    \"status\": \"Posted\"\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "Create Draft Load (for deletion)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.collectionVariables.set('draftLoadId', res._id);",
+									"    console.log('✅ draftLoadId saved: ' + res._id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Disposable Test Load - Bursa to Antalya\",\n  \"origin\": \"Bursa\",\n  \"destination\": \"Antalya\",\n  \"cargoType\": \"Dry Goods\",\n  \"weightKg\": 5000,\n  \"deadlineHours\": 48\n}"
+						},
+						"description": "Create a second load that stays in Draft status so it can be deleted. Auto-saves `draftLoadId`."
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665b9999999999999999abcd\",\n  \"title\": \"Disposable Test Load - Bursa to Antalya\",\n  \"status\": \"Draft\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Load",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/loads/{{draftLoadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"loads",
+								"{{draftLoadId}}"
+							]
+						},
+						"description": "Delete a Draft load. **Shipper role required.** Uses `{{draftLoadId}}` (the second load created specifically for deletion). Only Draft loads can be deleted."
+					},
+					"response": [
+						{
+							"name": "204 No Content",
+							"status": "No Content",
+							"code": 204,
+							"header": [],
+							"body": ""
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Bidding Service",
+			"description": "Manages bids placed by carriers on freight loads. Carriers create bids; shippers view and accept them.",
+			"item": [
+				{
+					"name": "Create Bid",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const res = pm.response.json();",
+									"    pm.collectionVariables.set('bidId', res._id);",
+									"    console.log('✅ bidId saved: ' + res._id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{carrierAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bids",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bids"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"loadId\": \"{{loadId}}\",\n  \"priceUSD\": 2500,\n  \"estimatedDeliveryHours\": 18\n}"
+						},
+						"description": "Place a bid on a load. **Carrier role required.** Uses `{{loadId}}`. Auto-saves `bidId`."
+					},
+					"response": [
+						{
+							"name": "201 Created",
+							"status": "Created",
+							"code": 201,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665c3d4e5f6789012345abcd\",\n  \"loadId\": \"665b2c3d4e5f67890123abcd\",\n  \"carrierId\": \"665a1b2c3d4e5f6789012346\",\n  \"priceUSD\": 2500,\n  \"estimatedDeliveryHours\": 18,\n  \"status\": \"Pending\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Bids by Load",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bids/{{loadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bids",
+								"{{loadId}}"
+							]
+						},
+						"description": "Get all bids for a load. **Shipper role required.** Uses `{{loadId}}`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n  {\n    \"_id\": \"665c3d4e5f6789012345abcd\",\n    \"loadId\": \"665b2c3d4e5f67890123abcd\",\n    \"carrierId\": \"665a1b2c3d4e5f6789012346\",\n    \"priceUSD\": 2500,\n    \"estimatedDeliveryHours\": 18,\n    \"status\": \"Pending\"\n  }\n]"
+						}
+					]
+				},
+				{
+					"name": "Accept Bid",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bids/{{bidId}}/accept",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bids",
+								"{{bidId}}",
+								"accept"
+							]
+						},
+						"description": "Accept a bid. **Shipper role required.** Uses `{{bidId}}`. Rejects all other bids on the same load."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665c3d4e5f6789012345abcd\",\n  \"status\": \"Accepted\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get My Bids",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{carrierAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/bids/my",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"bids",
+								"my"
+							]
+						},
+						"description": "Get all bids by the authenticated carrier. **Carrier role required.**"
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n  {\n    \"_id\": \"665c3d4e5f6789012345abcd\",\n    \"loadId\": \"665b2c3d4e5f67890123abcd\",\n    \"priceUSD\": 2500,\n    \"status\": \"Accepted\"\n  }\n]"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Matching Service",
+			"description": "Carrier recommendation engine. Matches loads to best-fit carriers.",
+			"item": [
+				{
+					"name": "Manual Recommend",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/match/recommend",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"match",
+								"recommend"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"loadId\": \"{{loadId}}\",\n  \"origin\": \"Istanbul\",\n  \"destination\": \"Ankara\",\n  \"cargoType\": \"Perishable Goods\",\n  \"weightKg\": 12000,\n  \"deadlineHours\": 24,\n  \"shipperId\": \"{{shipperId}}\"\n}"
+						},
+						"description": "Manually trigger carrier recommendation. Simulates `load.created` Kafka event. Uses `{{loadId}}` and `{{shipperId}}`. **Run this BEFORE Get Recommendations.**"
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665d4e5f6789012345abcdef\",\n  \"loadId\": \"665b2c3d4e5f67890123abcd\",\n  \"recommendations\": [\n    {\n      \"carrierId\": \"665a1b2c3d4e5f6789012346\",\n      \"score\": 92,\n      \"reason\": \"Refrigerated truck in Istanbul, 18000 kg capacity\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Recommendations by Load",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/match/{{loadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"match",
+								"{{loadId}}"
+							]
+						},
+						"description": "Get previously generated recommendations for a load. Uses `{{loadId}}`. **Run Manual Recommend first.**"
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"_id\": \"665d4e5f6789012345abcdef\",\n  \"loadId\": \"665b2c3d4e5f67890123abcd\",\n  \"recommendations\": [\n    {\n      \"carrierId\": \"665a1b2c3d4e5f6789012346\",\n      \"score\": 92,\n      \"reason\": \"Refrigerated truck in Istanbul, 18000 kg capacity\"\n    }\n  ]\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}

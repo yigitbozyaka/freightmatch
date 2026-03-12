@@ -1,0 +1,61 @@
+name: CI
+
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Detect Changed Services
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            user:
+              - 'services/user-service/**'
+            load:
+              - 'services/load-service/**'
+            bidding:
+              - 'services/bidding-service/**'
+            matching:
+              - 'services/matching-service/**'
+
+      - name: Build User Service
+        if: steps.filter.outputs.user == 'true'
+        run: docker build -f services/user-service/Dockerfile .
+
+      - name: Build Load Service
+        if: steps.filter.outputs.load == 'true'
+        run: docker build -f services/load-service/Dockerfile .
+
+      - name: Build Bidding Service
+        if: steps.filter.outputs.bidding == 'true'
+        run: docker build -f services/bidding-service/Dockerfile .
+
+      - name: Build Matching Service
+        if: steps.filter.outputs.matching == 'true'
+        run: docker build -f services/matching-service/Dockerfile .
