@@ -1,0 +1,17 @@
+{
+  "name": "freightmatch-seed",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "seed": "tsx seed.ts"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.9.5",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2"
+  }
+}
