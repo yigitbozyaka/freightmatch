@@ -4,7 +4,7 @@ import { getRecommendations } from './claude.service';
 import { CarrierResponse, ErrorCode, LoadCreatedEvent } from '../types';
 
 async function fetchCarriers(): Promise<CarrierResponse[]> {
-  const response = await fetch(`${env.USER_SERVICE_URL}/api/carriers`, {
+  const response = await fetch(`${env.USER_SERVICE_URL}/api/users/carriers`, {
     headers: { 'x-internal-request': 'matching-service' },
   });
 

@@ -22,8 +22,8 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 app.use('/api/users', authRoutes);
+app.use('/api/users/carriers', carrierRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/carriers', carrierRoutes);
 
 app.use((err: Error & { statusCode?: number; errorCode?: string }, _req: Request, res: Response, _next: NextFunction) => {
   const statusCode = err.statusCode || 500;

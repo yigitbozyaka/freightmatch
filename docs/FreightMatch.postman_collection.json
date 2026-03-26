@@ -434,12 +434,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/carriers",
+							"raw": "{{baseUrl}}/api/users/carriers",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"users",
 								"carriers"
 							]
 						},
@@ -471,12 +472,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/carriers/{{carrierId}}",
+							"raw": "{{baseUrl}}/api/users/carriers/{{carrierId}}",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
+								"users",
 								"carriers",
 								"{{carrierId}}"
 							]
