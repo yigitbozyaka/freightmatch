@@ -1,0 +1,29 @@
+{
+  "name": "@freightmatch/instrumentation",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.40.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.0",
+    "@opentelemetry/resources": "^1.22.0",
+    "@opentelemetry/sdk-node": "^0.45.0",
+    "@opentelemetry/sdk-trace-base": "^1.22.0",
+    "@opentelemetry/semantic-conventions": "^1.22.0",
+    "kafkajs": "^2.2.4",
+    "mongoose": "^8.23.0",
+    "prom-client": "^15.1.0",
+    "winston": "^3.11.0",
+    "winston-loki": "^6.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

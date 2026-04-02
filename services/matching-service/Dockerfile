@@ -7,12 +7,16 @@ COPY services/user-service/package.json services/user-service/
 COPY services/load-service/package.json services/load-service/
 COPY services/bidding-service/package.json services/bidding-service/
 COPY shared/contracts/package.json shared/contracts/
+COPY shared/instrumentation/package.json shared/instrumentation/
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.base.json ./
 COPY services/matching-service/tsconfig.json services/matching-service/
+COPY shared/instrumentation/tsconfig.json shared/instrumentation/
 COPY services/matching-service/src services/matching-service/src
 COPY shared/contracts shared/contracts
+COPY shared/instrumentation shared/instrumentation
 RUN pnpm --filter @freightmatch/contracts build
+RUN pnpm --filter @freightmatch/instrumentation build
 RUN pnpm --filter @freightmatch/matching-service build
 
 FROM node:20-alpine
@@ -24,9 +28,12 @@ COPY services/user-service/package.json services/user-service/
 COPY services/load-service/package.json services/load-service/
 COPY services/bidding-service/package.json services/bidding-service/
 COPY shared/contracts/package.json shared/contracts/
+COPY shared/instrumentation/package.json shared/instrumentation/
 COPY --from=builder /app/shared/contracts/dist shared/contracts/dist
+COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/services/matching-service
 COPY --from=builder /app/services/matching-service/dist ./dist
+ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 EXPOSE 3004
 CMD ["node", "dist/index.js"]
