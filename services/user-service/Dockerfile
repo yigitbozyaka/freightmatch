@@ -27,10 +27,9 @@ COPY services/bidding-service/package.json services/bidding-service/
 COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 COPY shared/instrumentation/package.json shared/instrumentation/
+COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/services/user-service
-COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
 COPY --from=builder /app/services/user-service/dist ./dist
-ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 EXPOSE 3001
 CMD ["node", "dist/index.js"]

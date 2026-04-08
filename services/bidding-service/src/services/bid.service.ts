@@ -20,6 +20,18 @@ export class BidService {
       throw error;
     }
 
+    const load = await this.fetchLoad(data.loadId);
+
+    if (load.status !== 'Posted') {
+      const error = new Error('Bids can only be placed on Posted loads') as Error & {
+        statusCode: number;
+        errorCode: string;
+      };
+      error.statusCode = 400;
+      error.errorCode = ErrorCode.VALIDATION_ERROR;
+      throw error;
+    }
+
     return bidRepository.create({
       ...data,
       carrierId,
@@ -84,7 +96,7 @@ export class BidService {
     return acceptedBid;
   }
 
-  private async fetchLoad(loadId: string): Promise<{ shipperId: string }> {
+  private async fetchLoad(loadId: string): Promise<{ shipperId: string; status: string }> {
     try {
       const response = await axios.get(`${env.LOAD_SERVICE_URL}/api/loads/${loadId}`, {
         headers: { 'x-internal-request': 'true' },
