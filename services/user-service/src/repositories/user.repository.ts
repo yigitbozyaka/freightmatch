@@ -28,6 +28,13 @@ export class UserRepository {
   async findCarrierById(id: string): Promise<IUser | null> {
     return User.findOne({ _id: id, role: 'Carrier' }).select('-passwordHash');
   }
+
+  async updateLoginAttempts(
+    userId: string,
+    update: { failedLoginAttempts: number; lockUntil?: Date },
+  ): Promise<void> {
+    await User.findByIdAndUpdate(userId, { $set: update });
+  }
 }
 
 export const userRepository = new UserRepository();
