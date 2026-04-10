@@ -16,6 +16,8 @@ export interface IUser extends Document {
   passwordHash: string;
   role: 'Shipper' | 'Carrier';
   carrierProfile?: ICarrierProfile;
+  failedLoginAttempts: number;
+  lockUntil: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +39,14 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
       enum: ['Shipper', 'Carrier'],
+    },
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Date,
+      default: null,
     },
     carrierProfile: {
       type: {

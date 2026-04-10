@@ -1,10 +1,13 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import helmet from 'helmet';
+import cors from 'cors';
 import { env } from './config/env';
 import { loadRouter } from './routes/load.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { connectProducer, disconnectProducer } from './kafka/producer';
 import { startConsumer, disconnectConsumer } from './kafka/consumer';
+import { apiRateLimiter } from './middlewares/rateLimit.middleware';
 import {
   logger,
   initTracing,
@@ -22,7 +25,15 @@ initTracing();
 
 const app = express();
 
-app.use(express.json());
+app.use(helmet());
+app.use(cors({
+  origin: env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+}));
+app.use(express.json({ limit: '1mb' }));
+app.disable('x-powered-by');
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -56,7 +67,7 @@ app.get('/metrics', async (req, res) => {
   res.end(await getMetrics());
 });
 
-app.use('/api/loads', loadRouter);
+app.use('/api/loads', apiRateLimiter, loadRouter);
 
 app.use(errorHandler);
 

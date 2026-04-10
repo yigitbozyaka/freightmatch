@@ -55,8 +55,8 @@ export function authorize(...allowedRoles: Array<'Shipper' | 'Carrier'>) {
 }
 
 export function authenticateOrInternal(req: AuthRequest, res: Response, next: NextFunction): void {
-  const internalHeader = req.headers['x-internal-request'];
-  if (internalHeader) {
+  const internalSecret = req.headers['x-internal-secret'];
+  if (internalSecret && internalSecret === env.INTERNAL_SERVICE_SECRET) {
     return next();
   }
 

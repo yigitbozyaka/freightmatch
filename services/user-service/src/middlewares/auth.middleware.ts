@@ -1,8 +1,8 @@
-// Copy this file to other services as-is for JWT validation
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { AuthRequest, ErrorCode, TokenPayload } from '../types';
+import { authService } from '../services/auth.service';
 
 export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
@@ -17,6 +17,16 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   }
 
   const token = header.split(' ')[1];
+
+  // Check if token has been blacklisted (logout)
+  if (authService.isTokenBlacklisted(token)) {
+    res.status(401).json({
+      error: ErrorCode.UNAUTHORIZED,
+      message: 'Token has been revoked',
+      timestamp: new Date().toISOString(),
+    });
+    return;
+  }
 
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET) as TokenPayload;

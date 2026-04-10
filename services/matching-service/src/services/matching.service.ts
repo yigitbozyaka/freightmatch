@@ -5,7 +5,7 @@ import { CarrierResponse, ErrorCode, LoadCreatedEvent } from '../types';
 
 async function fetchCarriers(): Promise<CarrierResponse[]> {
   const response = await fetch(`${env.USER_SERVICE_URL}/api/users/carriers`, {
-    headers: { 'x-internal-request': 'matching-service' },
+    headers: { 'x-internal-secret': env.INTERNAL_SERVICE_SECRET },
   });
 
   if (!response.ok) {
