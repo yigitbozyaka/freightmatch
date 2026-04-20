@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
+import { AuthRequest } from '../types';
 
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -26,6 +27,17 @@ export class AuthController {
     try {
       const { refreshToken } = req.body;
       const result = await authService.refresh(refreshToken);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logout(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const accessToken = req.headers.authorization?.split(' ')[1] || '';
+      const { refreshToken } = req.body;
+      const result = await authService.logout(accessToken, refreshToken);
       res.status(200).json(result);
     } catch (error) {
       next(error);
