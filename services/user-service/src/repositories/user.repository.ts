@@ -1,4 +1,4 @@
-import { User, IUser, ICarrierProfile } from '../models/user.model';
+import { User, IUser, ICarrierProfile, IShipperProfile } from '../models/user.model';
 
 export class UserRepository {
   async findByEmail(email: string): Promise<IUser | null> {
@@ -17,6 +17,14 @@ export class UserRepository {
     return User.findByIdAndUpdate(
       userId,
       { $set: { carrierProfile: profile } },
+      { new: true },
+    );
+  }
+
+  async upsertShipperProfile(userId: string, profile: IShipperProfile): Promise<IUser | null> {
+    return User.findByIdAndUpdate(
+      userId,
+      { $set: { shipperProfile: profile } },
       { new: true },
     );
   }
