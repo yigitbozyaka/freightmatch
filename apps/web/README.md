@@ -43,6 +43,17 @@ Use semantic tokens in Tailwind via arbitrary values: `bg-[--color-danger]`, `te
 - **JetBrains Mono** — display headings + monospaced data (`var(--font-display)` / `var(--font-mono)`)
 - **Geist** — body copy (`var(--font-sans)`)
 
+## Why the proxy
+
+All API calls go through `app/api/proxy/[...path]/route.ts` instead of hitting the gateway directly from the browser. This eliminates XSS risk: JWTs live in `httpOnly` cookies that JavaScript cannot read, so a successful script injection cannot exfiltrate credentials. The proxy also handles silent token refresh — when a request returns 401, it retries once with a fresh access token before giving up, keeping sessions alive without any client-side token management.
+
+Cookies used:
+
+| Cookie | `SameSite` | `Secure` | TTL |
+|---|---|---|---|
+| `fm_access` | `Lax` | prod only | 15 min |
+| `fm_refresh` | `Strict` | always | 30 days |
+
 ## Dev routes
 
 - `/_kitchen` — design system kitchen sink (dev-only, filled in by DS1/DS2/DS3 issues)
