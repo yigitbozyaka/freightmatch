@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { JetBrains_Mono } from "next/font/google";
 import { GridBackdrop } from "@/components/GridBackdrop";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const geist = Geist({
@@ -29,7 +30,7 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
         <GridBackdrop />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
