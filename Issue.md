@@ -1,30 +1,27 @@
 ## Goal
 
-Give the UI the richer profile fields it needs (photo, bio, trust score, avg ETA) and fill the gap that shippers currently have no profile object at all.
+`POST /api/users/profile/photo` accepts multipart and returns a URL the UI can read back. Dev-only: writes to disk, served statically. Production S3 path is explicitly deferred.
 
 ## Scope
 
-Files: `services/user-service/src/models/user.model.ts`, validators, routes, controllers.
-
-- Extend `ICarrierProfile`:
-  - `profilePhotoUrl: string | null`
-  - `avgEtaHours: number` (default 0; recomputed on `load.delivered` Kafka events — wiring is out of scope here, just the field)
-  - `trustScore: number` (0–100, default 0; computed via util from B2)
-  - `bio: string | null`
-- Add `IShipperProfile` (currently absent):
-  - `companyName: string | null`
-  - `profilePhotoUrl: string | null`
-  - `bio: string | null`
-  - `completedLoads: number` (default 0)
-  - `avgTimeToAcceptHours: number` (default 0)
-- Add `shipperProfile?: IShipperProfile` to the User schema (conditional on `role === 'Shipper'`, mirror the carrierProfile pattern).
-- Zod update + new endpoint `PATCH /api/users/shipper-profile` (shipper-only).
-- `GET /api/users/profile` returns the new fields.
-- Mongoose migration NOT needed (new optional fields; existing docs keep working).
+- Install `multer` in user-service.
+- Route: `POST /api/users/profile/photo` (authenticated, any role)
+  - Accepts `multipart/form-data` with field `photo`
+  - Validates: JPEG/PNG/WebP, max 5MB
+  - Saves to `services/user-service/uploads/<userId>-<timestamp>.<ext>`
+  - Updates the active profile's `profilePhotoUrl` to `/uploads/<filename>`
+  - Returns `{ profilePhotoUrl }`
+- Serve `/uploads/*` statically from user-service.
+- Add nginx location block `/uploads/` → user-service.
+- Add `uploads/` to service-level `.gitignore`.
 
 ## Acceptance criteria
 
-- Jest unit tests updated/added for model + validator
-- `GET /profile` includes new fields for both roles
-- `PATCH /carrier-profile` and `PATCH /shipper-profile` accept and persist new fields
-- Postman collection entry added for the new shipper-profile PATCH
+- Uploading via curl persists file and updates the user doc
+- Fetching `http://localhost/uploads/<file>` via gateway serves the image
+- Rejects non-image mimes with 415
+- Rejects >5MB with 413
+
+## Notes
+
+S3 / signed URLs are explicitly out of scope — follow-up task.

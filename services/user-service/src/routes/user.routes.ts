@@ -2,8 +2,10 @@ import { Router } from 'express';
 import { userController } from '../controllers/user.controller';
 import { carrierController } from '../controllers/carrier.controller';
 import { shipperController } from '../controllers/shipper.controller';
+import { photoController } from '../controllers/photo.controller';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
+import { uploadMiddleware, handleMulterError } from '../middlewares/upload.middleware';
 import { z } from 'zod';
 
 export const carrierProfileSchema = z.object({
@@ -50,6 +52,14 @@ router.patch(
 );
 
 router.get('/profile', authenticate, userController.getProfile);
+
+router.post(
+  '/profile/photo',
+  authenticate,
+  uploadMiddleware,
+  handleMulterError,
+  photoController.uploadPhoto,
+);
 
 router.get('/:id', authenticate, userController.getById);
 

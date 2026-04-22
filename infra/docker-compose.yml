@@ -53,6 +53,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+    volumes:
+      - user_uploads:/app/services/user-service/uploads
     env_file:
       - ../services/user-service/.env
 
@@ -112,3 +114,4 @@ services:
 
 volumes:
   mongodb_data:
+  user_uploads:

@@ -1,5 +1,6 @@
 import { env } from './config/env';
 import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
 import helmet from 'helmet';
 import cors from 'cors';
 import { connectDB, isDBConnected } from './config/db';
@@ -61,6 +62,8 @@ app.get('/metrics', async (_req: Request, res: Response) => {
   res.set('Content-Type', getContentType());
   res.end(await getMetrics());
 });
+
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use('/api/users', authRoutes);
 app.use('/api/users/carriers', carrierRoutes);

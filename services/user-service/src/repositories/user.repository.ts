@@ -29,6 +29,11 @@ export class UserRepository {
     );
   }
 
+  async updateProfilePhotoUrl(userId: string, role: 'Shipper' | 'Carrier', url: string): Promise<IUser | null> {
+    const field = role === 'Carrier' ? 'carrierProfile.profilePhotoUrl' : 'shipperProfile.profilePhotoUrl';
+    return User.findByIdAndUpdate(userId, { $set: { [field]: url } }, { new: true });
+  }
+
   async findAllCarriers(): Promise<IUser[]> {
     return User.find({ role: 'Carrier' }).select('-passwordHash');
   }

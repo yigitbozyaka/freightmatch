@@ -31,5 +31,6 @@ COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/services/user-service
 COPY --from=builder /app/services/user-service/dist ./dist
+RUN mkdir -p uploads
 EXPOSE 3001
 CMD ["node", "dist/index.js"]

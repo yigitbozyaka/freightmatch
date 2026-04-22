@@ -6,6 +6,7 @@ export const authRateLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     error: ErrorCode.TOO_MANY_REQUESTS,
     message: 'Too many requests, please try again later',
