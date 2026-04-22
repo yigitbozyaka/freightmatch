@@ -1,5 +1,3 @@
-// Dev-only kitchen sink — filled in by DS1 / DS2 / DS3 issues
-
 export default function KitchenPage() {
   return (
     <main className="min-h-dvh px-8 py-12 space-y-16">
