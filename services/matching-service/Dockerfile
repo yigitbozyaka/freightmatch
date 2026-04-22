@@ -34,6 +34,5 @@ COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/services/matching-service
 COPY --from=builder /app/services/matching-service/dist ./dist
-ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 EXPOSE 3004
 CMD ["node", "dist/index.js"]
