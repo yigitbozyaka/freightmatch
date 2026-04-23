@@ -50,7 +50,7 @@ services:
 
   user-service:
     build:
-      context: ..
+      context: .
       dockerfile: services/user-service/Dockerfile
     restart: unless-stopped
     ports:
@@ -74,7 +74,7 @@ services:
 
   load-service:
     build:
-      context: ..
+      context: .
       dockerfile: services/load-service/Dockerfile
     restart: unless-stopped
     ports:
@@ -95,7 +95,7 @@ services:
 
   bidding-service:
     build:
-      context: ..
+      context: .
       dockerfile: services/bidding-service/Dockerfile
     restart: unless-stopped
     ports:
@@ -117,7 +117,7 @@ services:
 
   matching-service:
     build:
-      context: ..
+      context: .
       dockerfile: services/matching-service/Dockerfile
     restart: unless-stopped
     ports:
@@ -149,7 +149,7 @@ services:
       - bidding-service
       - matching-service
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     logging: *default-logging
 
 volumes:
