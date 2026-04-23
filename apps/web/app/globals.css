@@ -81,3 +81,115 @@ body {
     auto;
   backdrop-filter: blur(10px);
 }
+
+@keyframes fm-route-draw {
+  from {
+    stroke-dashoffset: var(--fm-route-path-length, 0);
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.fm-route-map .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: var(--color-slate-950);
+  font-family: var(--font-mono);
+}
+
+.fm-route-map .leaflet-pane,
+.fm-route-map .leaflet-control {
+  filter: saturate(0.92);
+}
+
+.fm-route-map .leaflet-tile {
+  filter: brightness(0.88) contrast(1.08);
+}
+
+.fm-route-map .leaflet-control-attribution {
+  margin: 0;
+  border-top: 1px solid rgba(245, 179, 66, 0.22);
+  border-left: 1px solid rgba(245, 179, 66, 0.22);
+  border-top-left-radius: 10px;
+  background: rgba(10, 14, 18, 0.84) !important;
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.fm-route-map .leaflet-control-attribution a {
+  color: #f5b342;
+}
+
+.fm-route-map .leaflet-popup-content-wrapper {
+  border: 1px solid rgba(245, 179, 66, 0.32);
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 28%), rgba(18, 24, 32, 0.96);
+  color: #e2e8f0;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.38);
+}
+
+.fm-route-map .leaflet-popup-content {
+  margin: 0.75rem 0.875rem;
+  min-width: 10rem;
+}
+
+.fm-route-map .leaflet-popup-tip {
+  background: rgba(18, 24, 32, 0.96);
+}
+
+.fm-route-map .leaflet-popup-tip-container {
+  margin-top: -1px;
+}
+
+.fm-route-map .leaflet-control-container {
+  font-family: var(--font-mono);
+}
+
+.fm-route-map .fm-route-path {
+  stroke: #f5b342;
+  stroke-width: 2;
+  stroke-linecap: square;
+  stroke-linejoin: round;
+}
+
+.fm-route-map .fm-route-path--animate {
+  stroke-dasharray: var(--fm-route-path-length, 0);
+  stroke-dashoffset: var(--fm-route-path-length, 0);
+  animation: fm-route-draw 1.5s ease-out 1 both;
+}
+
+.fm-route-map .fm-route-marker {
+  border: 0;
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-route-map .fm-route-path--animate {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .fm-route-map .leaflet-bottom.leaflet-right {
+    bottom: auto;
+    top: 0.75rem;
+  }
+
+  .fm-route-map .leaflet-control-attribution {
+    border-top: 1px solid rgba(245, 179, 66, 0.22);
+    border-right: 1px solid rgba(245, 179, 66, 0.22);
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 10px;
+  }
+}

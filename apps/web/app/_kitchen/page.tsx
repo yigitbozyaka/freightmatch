@@ -1,4 +1,5 @@
 import { DS1InteractiveShowcase } from "./_components/ds1-interactive-showcase";
+import { RouteMap } from "@/components/maps/RouteMap";
 import { Button } from "@/components/primitives/button";
 import { Input } from "@/components/primitives/input";
 
@@ -118,7 +119,28 @@ export default function KitchenPage() {
       </Section>
 
       <Section title="DS3 — RouteMap">
-        <Placeholder label="Component lands here in issue #48" />
+        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+          <DemoCard
+            eyebrow="Client-only"
+            title="Non-interactive lane"
+            description="Dark route card with amber endpoint markers and a single-run corridor draw animation."
+          >
+            <RouteMap destination="Detroit, Michigan" origin="Chicago, Illinois" />
+          </DemoCard>
+
+          <DemoCard
+            eyebrow="Interactive"
+            title="Map + popups"
+            description="Pan, zoom, and inspect the route with themed popup treatments that stay within the slate/amber system."
+          >
+            <RouteMap
+              destination="Dallas, Texas"
+              height="280px"
+              interactive
+              origin="Nashville, Tennessee"
+            />
+          </DemoCard>
+        </div>
       </Section>
     </main>
   );
