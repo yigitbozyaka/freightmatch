@@ -1,5 +1,3 @@
-import React from 'react';
-
 type SectionHeaderProps = {
   label: string;
   className?: string;
@@ -8,7 +6,7 @@ type SectionHeaderProps = {
 export function SectionHeader({ label, className = '' }: SectionHeaderProps) {
   return (
     <div className={`flex items-center gap-2 font-mono uppercase tracking-widest text-xs text-slate-300 ${className}`.trim()}>
-      <span className="text-amber-400">▌</span>
+      <span className="text-[--color-amber-400]">▌</span>
       <span>{label}</span>
     </div>
   );

@@ -1,5 +1,3 @@
-import React from 'react';
-
 type MonoNumProps = {
   value: number;
   currency?: string;
@@ -25,10 +23,7 @@ export function MonoNum({
   }).format(value);
 
   return (
-    <span
-      className={`font-mono tracking-[0.02em] tabular-nums ${className}`.trim()}
-      style={{ fontVariantNumeric: 'tabular-nums' }}
-    >
+    <span className={`font-mono tracking-[0.02em] tabular-nums ${className}`.trim()}>
       {formatted}
       {unit ? ` ${unit}` : ''}
     </span>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { MonoNum } from './MonoNum';
 
 type Trend = {
@@ -24,7 +23,8 @@ export function KpiTile({ label, value, trend, currency, unit }: KpiTileProps) {
         <MonoNum value={value} currency={currency} unit={unit} className="text-3xl font-black text-slate-100" />
         {trend ? (
           <span className={`font-mono text-xs ${trendClass}`}>
-            {trend.direction === 'up' ? '▲' : '▼'} {Math.abs(trend.value)}%
+            {trend.direction === 'up' ? '▲' : '▼'}
+            <MonoNum value={Math.abs(trend.value)} unit="%" className="ml-1" maximumFractionDigits={1} />
           </span>
         ) : null}
       </div>
