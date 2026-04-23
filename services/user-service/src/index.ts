@@ -24,6 +24,7 @@ process.env.SERVICE_NAME = 'user-service';
 initTracing();
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(cors({
@@ -63,7 +64,7 @@ app.get('/metrics', async (_req: Request, res: Response) => {
   res.end(await getMetrics());
 });
 
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'), { dotfiles: 'deny', maxAge: '1h', index: false }));
 
 app.use('/api/users', authRoutes);
 app.use('/api/users/carriers', carrierRoutes);

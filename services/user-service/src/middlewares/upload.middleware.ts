@@ -21,7 +21,10 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename(req: AuthRequest, file, cb) {
-    const userId = req.user?.userId ?? 'unknown';
+    if (!req.user?.userId) {
+      return cb(new Error('User not authenticated'), '');
+    }
+    const userId = req.user.userId;
     const ext = MIME_TO_EXT[file.mimetype] || path.extname(file.originalname);
     cb(null, `${userId}-${Date.now()}${ext}`);
   },
@@ -31,7 +34,7 @@ const fileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
   if (ALLOWED_MIMES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
+    cb(new Error('UNSUPPORTED_MIME'));
   }
 };
 
@@ -53,15 +56,15 @@ export function handleMulterError(err: Error, _req: Request, res: Response, next
       });
       return;
     }
+  }
 
-    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-      res.status(415).json({
-        error: 'UNSUPPORTED_MEDIA_TYPE',
-        message: 'Only JPEG, PNG, and WebP images are allowed',
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
+  if (err.message === 'UNSUPPORTED_MIME') {
+    res.status(415).json({
+      error: 'UNSUPPORTED_MEDIA_TYPE',
+      message: 'Only JPEG, PNG, and WebP images are allowed',
+      timestamp: new Date().toISOString(),
+    });
+    return;
   }
 
   next(err);

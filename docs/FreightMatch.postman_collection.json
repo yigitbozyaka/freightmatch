@@ -419,7 +419,7 @@
 									"value": "application/json"
 								}
 							],
-							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0,\n    \"profilePhotoUrl\": null,\n    \"avgEtaHours\": 0,\n    \"trustScore\": 0,\n    \"bio\": \"Experienced cold-chain hauler\"\n  }\n}"
+							"body": "{\n  \"id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0,\n    \"profilePhotoUrl\": null,\n    \"avgEtaHours\": 0,\n    \"trustScore\": 0,\n    \"bio\": \"Experienced cold-chain hauler\"\n  }\n}"
 						}
 					]
 				},
@@ -543,6 +543,55 @@
 								}
 							],
 							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Upload Profile Photo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile/photo",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile",
+								"photo"
+							]
+						},
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "photo",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"description": "Upload a profile photo. Works for both Shippers and Carriers. Replace `{{shipperAuthToken}}` with `{{carrierAuthToken}}` to upload as Carrier. Requires `multipart/form-data` with `photo` field containing a valid image file."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"profilePhotoUrl\": \"/uploads/665a1b2c3d4e5f6789012345-1681234567.jpg\"\n}"
 						}
 					]
 				}

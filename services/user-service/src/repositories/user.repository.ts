@@ -13,25 +13,49 @@ export class UserRepository {
     return User.create(data);
   }
 
-  async upsertCarrierProfile(userId: string, profile: ICarrierProfile): Promise<IUser | null> {
-    return User.findByIdAndUpdate(
-      userId,
-      { $set: { carrierProfile: profile } },
+  async upsertCarrierProfile(userId: string, profile: Partial<ICarrierProfile>): Promise<IUser | null> {
+    const update = Object.fromEntries(
+      Object.entries(profile).map(([k, v]) => [`carrierProfile.${k}`, v])
+    );
+    return User.findOneAndUpdate(
+      { _id: userId, role: 'Carrier' },
+      { $set: update },
       { new: true },
     );
   }
 
-  async upsertShipperProfile(userId: string, profile: IShipperProfile): Promise<IUser | null> {
-    return User.findByIdAndUpdate(
-      userId,
-      { $set: { shipperProfile: profile } },
+  async upsertShipperProfile(userId: string, profile: Partial<IShipperProfile>): Promise<IUser | null> {
+    const update = Object.fromEntries(
+      Object.entries(profile).map(([k, v]) => [`shipperProfile.${k}`, v])
+    );
+    return User.findOneAndUpdate(
+      { _id: userId, role: 'Shipper' },
+      { $set: update },
       { new: true },
     );
   }
 
-  async updateProfilePhotoUrl(userId: string, role: 'Shipper' | 'Carrier', url: string): Promise<IUser | null> {
-    const field = role === 'Carrier' ? 'carrierProfile.profilePhotoUrl' : 'shipperProfile.profilePhotoUrl';
-    return User.findByIdAndUpdate(userId, { $set: { [field]: url } }, { new: true });
+  async updateProfilePhotoUrl(userId: string, role: 'Shipper' | 'Carrier', url: string): Promise<{ user: IUser | null, oldPhotoUrl: string | null }> {
+    const user = await User.findById(userId);
+    if (!user) return { user: null, oldPhotoUrl: null };
+
+    let oldPhotoUrl: string | null = null;
+    if (role === 'Carrier') {
+      if (!user.carrierProfile) {
+        throw new Error('Profile must be created before uploading a photo');
+      }
+      oldPhotoUrl = user.carrierProfile.profilePhotoUrl;
+      user.carrierProfile.profilePhotoUrl = url;
+    } else {
+      if (!user.shipperProfile) {
+        throw new Error('Profile must be created before uploading a photo');
+      }
+      oldPhotoUrl = user.shipperProfile.profilePhotoUrl;
+      user.shipperProfile.profilePhotoUrl = url;
+    }
+
+    await user.save();
+    return { user, oldPhotoUrl };
   }
 
   async findAllCarriers(): Promise<IUser[]> {
