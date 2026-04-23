@@ -29,3 +29,18 @@ body {
   font-family: var(--font-sans);
   min-height: 100dvh;
 }
+
+@keyframes status-flicker {
+  0%,
+  18% {
+    opacity: 1;
+  }
+  19%,
+  24% {
+    opacity: 0.45;
+  }
+  25%,
+  100% {
+    opacity: 1;
+  }
+}
