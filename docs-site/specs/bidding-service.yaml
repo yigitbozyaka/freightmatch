@@ -1,0 +1,346 @@
+openapi: 3.1.0
+
+info:
+  title: Bidding Service
+  version: 0.1.0
+  description: |
+    Manages carrier bid submissions and bid evaluation for the FreightMatch platform.
+    Carriers place bids on Posted loads; shippers review and accept bids.
+    Accepting a bid triggers a Kafka event that transitions the load to Matched status.
+  contact:
+    name: FreightMatch
+    url: https://github.com/yigitbozyaka/freightmatch
+
+servers:
+  - url: http://localhost:3003
+    description: Local development
+  - url: /
+    description: Production (via NGINX gateway on port 80)
+
+tags:
+  - name: Bids
+    description: Bid submission and evaluation
+  - name: Observability
+    description: Health and metrics endpoints
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from the User Service `/api/users/login`
+
+  schemas:
+    Bid:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "665c3d4e5f67890123abcdef"
+        carrierId:
+          type: string
+          example: "665a1b2c3d4e5f6789012346"
+        loadId:
+          type: string
+          example: "665b2c3d4e5f67890123abcd"
+        priceUSD:
+          type: number
+          example: 2500
+        estimatedDeliveryHours:
+          type: integer
+          example: 20
+        status:
+          type: string
+          enum: [Pending, Accepted, Rejected]
+          example: Pending
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-03-09T11:00:00.000Z"
+      required: [id, carrierId, loadId, priceUSD, estimatedDeliveryHours, status, createdAt]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: Invalid or expired token
+        timestamp:
+          type: string
+          format: date-time
+      required: [error, message]
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: UNAUTHORIZED
+            message: Invalid or expired token
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    Forbidden:
+      description: Authenticated but insufficient role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: FORBIDDEN
+            message: You do not have permission to perform this action
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    NotFound:
+      description: Bid or load not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: NOT_FOUND
+            message: Bid not found
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    ValidationError:
+      description: Request body failed schema validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: VALIDATION_ERROR
+            message: "priceUSD: Must be a positive number"
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    RateLimited:
+      description: Too many requests — rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: RATE_LIMITED
+            message: Too many requests, please try again later
+
+paths:
+  /api/bids:
+    post:
+      tags: [Bids]
+      operationId: createBid
+      summary: Place a bid
+      description: |
+        Carrier places a bid on a Posted load.
+        **Carrier role required.**
+
+        **Rate limit:** 30 requests/second (general).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                loadId:
+                  type: string
+                  example: "665b2c3d4e5f67890123abcd"
+                priceUSD:
+                  type: number
+                  minimum: 0
+                  example: 2500
+                estimatedDeliveryHours:
+                  type: integer
+                  minimum: 1
+                  example: 20
+              required: [loadId, priceUSD, estimatedDeliveryHours]
+            example:
+              loadId: "665b2c3d4e5f67890123abcd"
+              priceUSD: 2500
+              estimatedDeliveryHours: 20
+      responses:
+        '201':
+          description: Bid created (status = Pending)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bid'
+              example:
+                id: "665c3d4e5f67890123abcdef"
+                carrierId: "665a1b2c3d4e5f6789012346"
+                loadId: "665b2c3d4e5f67890123abcd"
+                priceUSD: 2500
+                estimatedDeliveryHours: 20
+                status: Pending
+                createdAt: "2026-03-09T11:00:00.000Z"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/bids/my:
+    get:
+      tags: [Bids]
+      operationId: getMyBids
+      summary: Get carrier's own bids
+      description: |
+        Returns all bids placed by the authenticated carrier across all loads.
+        **Carrier role required.**
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of bids placed by the carrier
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bid'
+              example:
+                - id: "665c3d4e5f67890123abcdef"
+                  carrierId: "665a1b2c3d4e5f6789012346"
+                  loadId: "665b2c3d4e5f67890123abcd"
+                  priceUSD: 2500
+                  estimatedDeliveryHours: 20
+                  status: Pending
+                  createdAt: "2026-03-09T11:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/bids/{loadId}:
+    get:
+      tags: [Bids]
+      operationId: getBidsByLoad
+      summary: Get bids for a load
+      description: |
+        Returns all bids placed on a specific load.
+        **Shipper role required** (only the shipper who owns the load can view bids).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: loadId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665b2c3d4e5f67890123abcd"
+      responses:
+        '200':
+          description: Array of bids for the load
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bid'
+              example:
+                - id: "665c3d4e5f67890123abcdef"
+                  carrierId: "665a1b2c3d4e5f6789012346"
+                  loadId: "665b2c3d4e5f67890123abcd"
+                  priceUSD: 2500
+                  estimatedDeliveryHours: 20
+                  status: Pending
+                  createdAt: "2026-03-09T11:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/bids/{bidId}/accept:
+    patch:
+      tags: [Bids]
+      operationId: acceptBid
+      summary: Accept a bid
+      description: |
+        Shipper accepts a carrier's bid. This sets the bid status to **Accepted** and publishes
+        a Kafka event to transition the load status to **Matched** and reject all other bids.
+        **Shipper role required.**
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bidId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665c3d4e5f67890123abcdef"
+      responses:
+        '200':
+          description: Bid accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bid'
+              example:
+                id: "665c3d4e5f67890123abcdef"
+                carrierId: "665a1b2c3d4e5f6789012346"
+                loadId: "665b2c3d4e5f67890123abcd"
+                priceUSD: 2500
+                estimatedDeliveryHours: 20
+                status: Accepted
+                createdAt: "2026-03-09T11:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /health:
+    get:
+      tags: [Observability]
+      operationId: healthCheck
+      summary: Health check
+      security: []
+      description: Returns service health status including MongoDB and Kafka connectivity.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              example:
+                status: ok
+                service: bidding-service
+                version: "1.0.0"
+                timestamp: "2026-03-09T10:00:00.000Z"
+                checks:
+                  mongodb: ok
+        '503':
+          description: Service is degraded
+
+  /metrics:
+    get:
+      tags: [Observability]
+      operationId: metrics
+      summary: Prometheus metrics
+      security: []
+      description: Exposes Prometheus-compatible metrics for HTTP request durations and counts.
+      responses:
+        '200':
+          description: Prometheus text format
+          content:
+            text/plain:
+              example: |
+                # HELP http_request_duration_seconds HTTP request duration in seconds
+                # TYPE http_request_duration_seconds histogram
+                http_request_duration_seconds_bucket{method="POST",route="/api/bids",status_code="201",le="0.1"} 2
