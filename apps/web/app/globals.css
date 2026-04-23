@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+:root {
+  --font-geist: "Geist";
+  --font-jetbrains-mono: "JetBrains Mono";
+}
+
 @theme {
   /* Slate palette */
   --color-slate-950: #0A0E12;
