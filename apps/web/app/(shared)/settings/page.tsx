@@ -1,7 +1,9 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 import { ToastHost, useToastQueue } from '@/components/primitives/ToastHost';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 const STORAGE_KEY = 'fm.settings.notifications';
 
@@ -10,25 +12,35 @@ type NotificationPrefs = {
   loadStatusChanges: boolean;
 };
 
+const PrefsSchema = z.object({
+  newBids: z.boolean(),
+  loadStatusChanges: z.boolean(),
+});
+
 export default function SettingsPage() {
+  const { user } = useAuth();
   const { toasts, pushToast, dismissToast } = useToastQueue();
-  const [email] = useState('current-user@freightmatch.com');
   const [newPassword, setNewPassword] = useState('');
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     newBids: true,
     loadStatusChanges: true,
   });
+  const hasHydratedPrefs = useRef(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
+    hasHydratedPrefs.current = true;
     if (!raw) return;
     try {
-      const parsed = JSON.parse(raw) as NotificationPrefs;
+      const parsed = PrefsSchema.parse(JSON.parse(raw));
       setPrefs(parsed);
-    } catch {}
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   }, []);
 
   useEffect(() => {
+    if (!hasHydratedPrefs.current) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
   }, [prefs]);
 
@@ -59,8 +71,8 @@ export default function SettingsPage() {
         <div className="space-y-1.5">
           <label className="font-mono text-xs uppercase tracking-widest text-slate-400">Email (read-only)</label>
           <input
-            value={email}
-            disabled
+            value={user?.email ?? ''}
+            readOnly
             aria-readonly="true"
             className="w-full rounded border border-slate-800 bg-slate-950 px-3 py-2.5 font-mono text-sm text-slate-400"
           />
@@ -91,29 +103,39 @@ export default function SettingsPage() {
       <section className="space-y-4 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
         <h2 className="font-mono text-sm uppercase tracking-widest text-slate-300">Notifications</h2>
 
-        <label className="flex items-center gap-2 font-mono text-sm text-slate-200">
-          <input
-            type="checkbox"
-            checked={prefs.newBids}
-            onChange={(e) => setPrefs((p) => ({ ...p, newBids: e.target.checked }))}
-          />
-          Email me on new bids
-          <span className="rounded border border-amber-500/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-300">
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 font-mono text-sm text-slate-200">
+            <input
+              type="checkbox"
+              checked={prefs.newBids}
+              onChange={(e) => setPrefs((p) => ({ ...p, newBids: e.target.checked }))}
+            />
+            Email me on new bids
+          </label>
+          <span
+            aria-hidden="true"
+            className="rounded border border-amber-500/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-300"
+          >
             Coming soon
           </span>
-        </label>
+        </div>
 
-        <label className="flex items-center gap-2 font-mono text-sm text-slate-200">
-          <input
-            type="checkbox"
-            checked={prefs.loadStatusChanges}
-            onChange={(e) => setPrefs((p) => ({ ...p, loadStatusChanges: e.target.checked }))}
-          />
-          Email me on load status changes
-          <span className="rounded border border-amber-500/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-300">
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 font-mono text-sm text-slate-200">
+            <input
+              type="checkbox"
+              checked={prefs.loadStatusChanges}
+              onChange={(e) => setPrefs((p) => ({ ...p, loadStatusChanges: e.target.checked }))}
+            />
+            Email me on load status changes
+          </label>
+          <span
+            aria-hidden="true"
+            className="rounded border border-amber-500/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber-300"
+          >
             Coming soon
           </span>
-        </label>
+        </div>
       </section>
 
       <section className="space-y-3 rounded-lg border border-[--color-danger]/40 bg-[--color-danger]/10 p-5">
@@ -126,6 +148,9 @@ export default function SettingsPage() {
         >
           Delete Account
         </button>
+        <p className="font-mono text-xs text-[--color-danger]/90">
+          Account deletion is currently handled by support. Email support to submit a deletion request.
+        </p>
       </section>
 
       <ToastHost toasts={toasts} onDismiss={dismissToast} />

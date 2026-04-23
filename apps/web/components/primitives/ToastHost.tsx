@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type ToastVariant = 'info' | 'error';
 
@@ -12,6 +12,8 @@ type ToastItem = {
 
 export function useToastQueue(autoDismissMs = 4000) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const nextToastId = useRef(1);
+  const timeoutIds = useRef<number[]>([]);
 
   const dismissToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -19,11 +21,25 @@ export function useToastQueue(autoDismissMs = 4000) {
 
   const pushToast = useCallback(
     (message: string, variant: ToastVariant = 'info') => {
-      const id = Date.now() + Math.floor(Math.random() * 1000);
+      const id = nextToastId.current++;
       setToasts((prev) => [...prev, { id, message, variant }]);
-      setTimeout(() => dismissToast(id), autoDismissMs);
+      const timeoutId = window.setTimeout(() => {
+        dismissToast(id);
+        timeoutIds.current = timeoutIds.current.filter((activeId) => activeId !== timeoutId);
+      }, autoDismissMs);
+      timeoutIds.current.push(timeoutId);
     },
     [autoDismissMs, dismissToast],
+  );
+
+  useEffect(
+    () => () => {
+      for (const timeoutId of timeoutIds.current) {
+        window.clearTimeout(timeoutId);
+      }
+      timeoutIds.current = [];
+    },
+    [],
   );
 
   return { toasts, pushToast, dismissToast };
