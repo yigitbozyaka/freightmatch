@@ -43,6 +43,16 @@ function parseNumber(value: string | null, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseClampedNumber(
+  value: string | null,
+  fallback: number,
+  { min, max, integer = false }: { min: number; max: number; integer?: boolean },
+) {
+  const parsed = parseNumber(value, fallback);
+  const rounded = integer ? Math.trunc(parsed) : parsed;
+  return Math.min(max, Math.max(min, rounded));
+}
+
 function ShipperLoadsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -53,9 +63,21 @@ function ShipperLoadsContent() {
   );
   const cargoType = searchParams.get('cargoType') ?? '';
   const query = searchParams.get('q') ?? '';
-  const minWeight = parseNumber(searchParams.get('minWeight'), 0);
-  const maxWeight = parseNumber(searchParams.get('maxWeight'), MAX_WEIGHT);
-  const page = Math.max(1, parseNumber(searchParams.get('page'), 1));
+  const parsedMinWeight = parseClampedNumber(searchParams.get('minWeight'), 0, {
+    min: 0,
+    max: MAX_WEIGHT,
+  });
+  const parsedMaxWeight = parseClampedNumber(searchParams.get('maxWeight'), MAX_WEIGHT, {
+    min: 0,
+    max: MAX_WEIGHT,
+  });
+  const minWeight = Math.min(parsedMinWeight, parsedMaxWeight);
+  const maxWeight = Math.max(parsedMinWeight, parsedMaxWeight);
+  const page = parseClampedNumber(searchParams.get('page'), 1, {
+    min: 1,
+    max: Number.MAX_SAFE_INTEGER,
+    integer: true,
+  });
 
   const setParam = (name: string, value?: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -77,18 +99,8 @@ function ShipperLoadsContent() {
       minWeight,
       maxWeight,
       query,
-      page,
     ],
-    queryFn: () =>
-      listMyLoads({
-        status: selectedStatuses,
-        cargoType: cargoType || undefined,
-        minWeight,
-        maxWeight,
-        q: query || undefined,
-        page,
-        limit: PAGE_SIZE,
-      }),
+    queryFn: () => listMyLoads(),
   });
 
   const cargoTypeOptions = useMemo(
@@ -125,10 +137,7 @@ function ShipperLoadsContent() {
       <header className="flex items-center justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-widest text-amber-400">Shipper / Loads</p>
-          <h1
-            className="text-2xl font-bold text-slate-100"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
+          <h1 className="font-display text-2xl font-bold text-slate-100">
             My Loads
           </h1>
         </div>
@@ -246,7 +255,14 @@ function ShipperLoadsContent() {
               key: '_id',
               header: 'ID',
               sortable: true,
-              render: (row) => <span className="font-mono">{shortId(row._id)}</span>,
+              render: (row) => (
+                <Link
+                  href={`/loads/${row._id}`}
+                  className="font-mono text-amber-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                >
+                  {shortId(row._id)}
+                </Link>
+              ),
             },
             { key: 'title', header: 'Title', sortable: true },
             {
@@ -286,7 +302,6 @@ function ShipperLoadsContent() {
           ]}
           rows={paginatedLoads}
           rowKey={(row) => row._id}
-          onRowClick={(row) => router.push(`/loads/${row._id}`)}
         />
       )}
 
