@@ -9,12 +9,8 @@ import { listMine, type Bid } from '@/lib/api/bids';
 
 type TabKey = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'ALL';
 
-const TAB_LABELS: Record<TabKey, string> = {
-  PENDING: 'PENDING',
-  ACCEPTED: 'ACCEPTED',
-  REJECTED: 'REJECTED',
-  ALL: 'ALL',
-};
+const TABS = ['PENDING', 'ACCEPTED', 'REJECTED', 'ALL'] as const;
+const CARRIER_BIDS_QUERY_KEY = ['57-carrier-bids'] as const;
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('en-US', {
@@ -50,24 +46,34 @@ function getTitleLabel(bid: Bid) {
   return `Load ${bid.loadId.slice(-8)}`;
 }
 
+function getLatestActivityAt(bid: Bid) {
+  const submittedAt = bid.submittedAt ? new Date(bid.submittedAt).getTime() : Number.NaN;
+  if (!Number.isNaN(submittedAt)) return submittedAt;
+
+  const createdAt = bid.createdAt ? new Date(bid.createdAt).getTime() : Number.NaN;
+  if (!Number.isNaN(createdAt)) return createdAt;
+
+  return 0;
+}
+
+function toSafeMarketplacePath(loadId: string) {
+  if (!/^[A-Za-z0-9_-]+$/.test(loadId)) return null;
+  return `/marketplace/${loadId}`;
+}
+
 export default function CarrierBidsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>('PENDING');
 
   const { data = [], isLoading, isError } = useQuery({
-    queryKey: ['carrier-bids-portfolio'],
+    queryKey: CARRIER_BIDS_QUERY_KEY,
     queryFn: listMine,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
   });
 
   const sortedBids = useMemo(() => {
-    return [...data].sort((a, b) => {
-      const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
-      const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
-      return bTime - aTime;
-    });
+    return [...data].sort((a, b) => getLatestActivityAt(b) - getLatestActivityAt(a));
   }, [data]);
 
   const grouped = useMemo(() => {
@@ -94,7 +100,7 @@ export default function CarrierBidsPage() {
     <main className="space-y-6 px-8 py-10">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-xs uppercase tracking-widest text-amber-400">Carrier / Bids</p>
+          <p className="font-mono text-xs uppercase tracking-widest text-amber-400">Carrier / Bid Portfolio</p>
           <h1 className="text-2xl font-bold text-slate-100" style={{ fontFamily: 'var(--font-display)' }}>
             Bid Portfolio
           </h1>
@@ -106,7 +112,7 @@ export default function CarrierBidsPage() {
       </header>
 
       <section className="flex flex-wrap gap-2 rounded-lg border border-slate-800 bg-slate-900/40 p-2">
-        {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => {
+        {TABS.map((tab) => {
           const isActive = tab === activeTab;
           return (
             <button
@@ -119,7 +125,7 @@ export default function CarrierBidsPage() {
                   : 'border border-transparent text-slate-400 hover:border-slate-700 hover:text-slate-200'
               }`}
             >
-              {TAB_LABELS[tab]}
+              {tab}
             </button>
           );
         })}
@@ -133,7 +139,7 @@ export default function CarrierBidsPage() {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded border border-dashed border-slate-700 p-10 text-center font-mono text-sm uppercase tracking-[0.2em] text-slate-500">
-          NO BIDS
+          NO {activeTab} BIDS
         </div>
       ) : (
         <Table<Bid>
@@ -141,13 +147,13 @@ export default function CarrierBidsPage() {
             {
               key: 'loadId',
               header: 'Load Title',
-              sortable: true,
+              sortable: false,
               render: (row) => getTitleLabel(row),
             },
             {
               key: 'load',
               header: 'Route',
-              sortable: true,
+              sortable: false,
               render: (row) => getRouteLabel(row),
             },
             {
@@ -179,7 +185,11 @@ export default function CarrierBidsPage() {
           ]}
           rows={rows}
           rowKey={(row) => row._id}
-          onRowClick={(row) => router.push(`/marketplace/${row.loadId}`)}
+          onRowClick={(row) => {
+            const path = toSafeMarketplacePath(row.loadId);
+            if (!path) return;
+            router.push(path);
+          }}
         />
       )}
     </main>
