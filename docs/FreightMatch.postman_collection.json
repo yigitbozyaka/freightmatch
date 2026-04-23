@@ -404,9 +404,9 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"truckType\": \"refrigerated\",\n  \"capacityKg\": 18000,\n  \"homeCity\": \"Istanbul\"\n}"
+							"raw": "{\n  \"truckType\": \"refrigerated\",\n  \"capacityKg\": 18000,\n  \"homeCity\": \"Istanbul\",\n  \"bio\": \"Experienced cold-chain hauler\",\n  \"profilePhotoUrl\": null\n}"
 						},
-						"description": "Update carrier profile. **Carrier role required.** Valid truck types: `flatbed`, `refrigerated`, `dry-van`, `tanker`."
+						"description": "Update carrier profile. **Carrier role required.** Valid truck types: `flatbed`, `refrigerated`, `dry-van`, `tanker`. Optional new fields: `profilePhotoUrl`, `avgEtaHours`, `trustScore`, `bio`."
 					},
 					"response": [
 						{
@@ -419,7 +419,53 @@
 									"value": "application/json"
 								}
 							],
-							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0\n  }\n}"
+							"body": "{\n  \"id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0,\n    \"profilePhotoUrl\": null,\n    \"avgEtaHours\": 0,\n    \"trustScore\": 0,\n    \"bio\": \"Experienced cold-chain hauler\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Shipper Profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/shipper-profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"shipper-profile"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"companyName\": \"Acme Logistics\",\n  \"bio\": \"Fast and reliable freight shipping\",\n  \"profilePhotoUrl\": null\n}"
+						},
+						"description": "Update shipper profile. **Shipper role required.** Optional fields: `companyName`, `profilePhotoUrl`, `bio`, `completedLoads`, `avgTimeToAcceptHours`."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"id\": \"665a1b2c3d4e5f6789012345\",\n  \"email\": \"shipper@freightmatch.com\",\n  \"role\": \"Shipper\",\n  \"shipperProfile\": {\n    \"companyName\": \"Acme Logistics\",\n    \"profilePhotoUrl\": null,\n    \"bio\": \"Fast and reliable freight shipping\",\n    \"completedLoads\": 0,\n    \"avgTimeToAcceptHours\": 0\n  },\n  \"createdAt\": \"2026-03-09T10:00:00.000Z\"\n}"
 						}
 					]
 				},
@@ -497,6 +543,55 @@
 								}
 							],
 							"body": "{\n  \"_id\": \"665a1b2c3d4e5f6789012346\",\n  \"email\": \"carrier@freightmatch.com\",\n  \"role\": \"Carrier\",\n  \"carrierProfile\": {\n    \"truckType\": \"refrigerated\",\n    \"capacityKg\": 18000,\n    \"homeCity\": \"Istanbul\",\n    \"rating\": 0,\n    \"completedShipments\": 0\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Upload Profile Photo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{shipperAuthToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile/photo",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile",
+								"photo"
+							]
+						},
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "photo",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"description": "Upload a profile photo. Works for both Shippers and Carriers. Replace `{{shipperAuthToken}}` with `{{carrierAuthToken}}` to upload as Carrier. Requires `multipart/form-data` with `photo` field containing a valid image file."
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"status": "OK",
+							"code": 200,
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n  \"profilePhotoUrl\": \"/uploads/665a1b2c3d4e5f6789012345-1681234567.jpg\"\n}"
 						}
 					]
 				}
