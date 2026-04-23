@@ -2,10 +2,8 @@ import { Router } from 'express';
 import { userController } from '../controllers/user.controller';
 import { carrierController } from '../controllers/carrier.controller';
 import { shipperController } from '../controllers/shipper.controller';
-import { photoController } from '../controllers/photo.controller';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
-import { uploadMiddleware, handleMulterError } from '../middlewares/upload.middleware';
 import { z } from 'zod';
 
 export const carrierProfileSchema = z.object({
@@ -19,18 +17,14 @@ export const carrierProfileSchema = z.object({
     .string()
     .min(1, 'Home city is required')
     .trim(),
-  profilePhotoUrl: z.string().url('Invalid URL format').nullable().optional(),
-  avgEtaHours: z.number().min(0, 'Avg ETA must be non-negative').optional(),
-  trustScore: z.number().min(0).max(100, 'Trust score must be 0–100').optional(),
+  profilePhotoUrl: z.string().nullable().optional(),
   bio: z.string().max(500, 'Bio must be 500 characters or less').nullable().optional(),
 });
 
 export const shipperProfileSchema = z.object({
   companyName: z.string().max(200, 'Company name must be 200 characters or less').nullable().optional(),
-  profilePhotoUrl: z.string().url('Invalid URL format').nullable().optional(),
+  profilePhotoUrl: z.string().nullable().optional(),
   bio: z.string().max(500, 'Bio must be 500 characters or less').nullable().optional(),
-  completedLoads: z.number().int('Must be an integer').min(0, 'Must be non-negative').optional(),
-  avgTimeToAcceptHours: z.number().min(0, 'Must be non-negative').optional(),
 });
 
 const router = Router();
@@ -52,14 +46,6 @@ router.patch(
 );
 
 router.get('/profile', authenticate, userController.getProfile);
-
-router.post(
-  '/profile/photo',
-  authenticate,
-  uploadMiddleware,
-  handleMulterError,
-  photoController.uploadPhoto,
-);
 
 router.get('/:id', authenticate, userController.getById);
 
