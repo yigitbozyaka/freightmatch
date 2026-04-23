@@ -1,6 +1,7 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
 import { ToastHost, useToastQueue } from '@/components/primitives/ToastHost';
 
@@ -15,6 +16,7 @@ type ShipperProfile = {
 export default function ShipperProfilePage() {
   const { toasts, pushToast, dismissToast } = useToastQueue();
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedPhotoPreview, setHasUnsavedPhotoPreview] = useState(false);
   const [profile, setProfile] = useState<ShipperProfile>({
     companyName: '',
     bio: '',
@@ -22,6 +24,21 @@ export default function ShipperProfilePage() {
     avgTimeToAcceptHours: 0,
     photoUrl: '',
   });
+  const [initialProfile, setInitialProfile] = useState<ShipperProfile | null>(null);
+  const hasHydratedProfile = useRef(false);
+
+  const profileQuery = useQuery({
+    queryKey: ['shipper-profile'],
+    queryFn: () => apiFetch<ShipperProfile>('api/users/shipper-profile'),
+  });
+
+  useEffect(() => {
+    if (!profileQuery.data || hasHydratedProfile.current) return;
+    setProfile(profileQuery.data);
+    setInitialProfile(profileQuery.data);
+    setHasUnsavedPhotoPreview(false);
+    hasHydratedProfile.current = true;
+  }, [profileQuery.data]);
 
   const initials = useMemo(() => {
     const words = profile.companyName.trim().split(/\s+/).filter(Boolean);
@@ -32,25 +49,47 @@ export default function ShipperProfilePage() {
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/webp'];
+    if (!allowedMimeTypes.includes(file.type)) {
+      pushToast('Photo must be PNG, JPEG, or WebP.', 'error');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      pushToast('Photo must be 2 MB or smaller.', 'error');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      setProfile((prev) => ({ ...prev, photoUrl: String(reader.result ?? '') }));
+      setProfile((prev) => ({ ...prev, photoUrl: String(reader.result ?? '') })); // TODO: Replace preview-only flow with real upload endpoint.
+      setHasUnsavedPhotoPreview(true);
     };
     reader.readAsDataURL(file);
   };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!initialProfile) return;
+
+    const dirtyFields: Partial<Pick<ShipperProfile, 'companyName' | 'bio'>> = {};
+    if (profile.companyName !== initialProfile.companyName) {
+      dirtyFields.companyName = profile.companyName;
+    }
+    if (profile.bio !== initialProfile.bio) {
+      dirtyFields.bio = profile.bio;
+    }
+    if (Object.keys(dirtyFields).length === 0) {
+      pushToast('Nothing changed yet.', 'info');
+      return;
+    }
+
     setIsSaving(true);
     try {
       await apiFetch('api/users/shipper-profile', {
         method: 'PATCH',
-        body: JSON.stringify({
-          companyName: profile.companyName,
-          bio: profile.bio,
-        }),
+        body: JSON.stringify(dirtyFields),
       });
       pushToast('Profile saved successfully.', 'info');
+      setInitialProfile((prev) => (prev ? { ...prev, ...dirtyFields } : prev));
     } catch {
       pushToast('Profile could not be saved.', 'error');
     } finally {
@@ -67,6 +106,15 @@ export default function ShipperProfilePage() {
         </h1>
       </header>
 
+      {profileQuery.isLoading ? (
+        <p className="font-mono text-xs uppercase tracking-wider text-slate-400">Loading profile…</p>
+      ) : null}
+      {profileQuery.isError ? (
+        <p className="font-mono text-xs uppercase tracking-wider text-[--color-danger]">
+          Could not load your profile. Please refresh and try again.
+        </p>
+      ) : null}
+
       <section className="grid gap-4 lg:grid-cols-3">
         <article className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
           <p className="font-mono text-xs uppercase tracking-widest text-slate-400">Photo</p>
@@ -81,9 +129,14 @@ export default function ShipperProfilePage() {
             </div>
             <label className="cursor-pointer rounded border border-slate-700 px-3 py-2 font-mono text-xs text-slate-200 hover:border-slate-500">
               Upload photo
-              <input type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={onFileChange} />
             </label>
           </div>
+          {hasUnsavedPhotoPreview ? (
+            <p className="mt-2 font-mono text-[11px] text-amber-300">
+              Photo preview only for now; upload persistence is coming soon.
+            </p>
+          ) : null}
         </article>
 
         <article className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
@@ -127,7 +180,7 @@ export default function ShipperProfilePage() {
 
         <button
           type="submit"
-          disabled={isSaving}
+          disabled={isSaving || profileQuery.isLoading || profileQuery.isError || !initialProfile}
           className="rounded border border-amber-400 bg-amber-400/10 px-4 py-2 font-mono text-xs uppercase tracking-[0.15em] text-amber-300 disabled:opacity-50"
         >
           {isSaving ? 'Saving...' : 'Save Profile'}

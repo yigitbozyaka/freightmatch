@@ -8,11 +8,24 @@ export class ApiResponseError extends Error {
   }
 }
 
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const escapedName = name.replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&");
+  const match = document.cookie.match(new RegExp(`(?:^|; )${escapedName}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = (init?.method ?? "GET").toUpperCase();
+  const csrfToken =
+    method === "GET" || method === "HEAD" ? null : readCookie("fm_csrf");
+
   const res = await fetch(`/api/proxy/${path}`, {
     ...init,
+    credentials: "same-origin",
     headers: {
       "Content-Type": "application/json",
+      ...(csrfToken ? { "x-fm-csrf": csrfToken } : {}),
       ...init?.headers,
     },
   });

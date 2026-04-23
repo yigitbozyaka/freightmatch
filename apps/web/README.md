@@ -53,6 +53,9 @@ Cookies used:
 |---|---|---|---|
 | `fm_access` | `Lax` | prod only | 15 min |
 | `fm_refresh` | `Strict` | always | 30 days |
+| `fm_csrf` | `Strict` | prod only | 24 hours |
+
+For mutating requests (`POST`, `PATCH`, `PUT`, `DELETE`) the proxy enforces a double-submit CSRF check via `x-fm-csrf` header matching the `fm_csrf` cookie (auth endpoints are exempt).
 
 ## Dev routes
 
