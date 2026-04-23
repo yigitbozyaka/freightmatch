@@ -1,3 +1,4 @@
+import { Issue47Showcase } from '../../components/Issue47Showcase';
 export default function KitchenPage() {
   return (
     <main className="min-h-dvh px-8 py-12 space-y-16">
@@ -64,7 +65,7 @@ export default function KitchenPage() {
       </Section>
 
       <Section title="DS2 — Table, StatusPill, KpiTile, MonoNum, SectionHeader, Toast">
-        <Placeholder label="Components land here in issue #47" />
+        <Issue47Showcase />
       </Section>
 
       <Section title="DS3 — RouteMap">
