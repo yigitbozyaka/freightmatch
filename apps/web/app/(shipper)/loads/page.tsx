@@ -9,7 +9,7 @@ import { Table } from '@/components/primitives/Table';
 import { listMyLoads, type Load } from '@/lib/api/loads';
 
 const PAGE_SIZE = 20;
-const STATUS_OPTIONS = ['Draft', 'Posted', 'Matched', 'InTransit', 'Delivered'] as const;
+const STATUS_OPTIONS = ['Draft', 'Posted', 'Matched', 'InTransit', 'Delivered', 'Cancelled', 'Pending', 'Accepted', 'Rejected'] as const;
 
 function shortId(id: string) {
   return id.length > 8 ? `#${id.slice(-8)}` : id;

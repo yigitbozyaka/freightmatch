@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { apiFetch } from "./client";
 
-const LoadStatusSchema = z.enum(["Draft", "Posted", "Matched", "InTransit", "Delivered"]);
+const LoadStatusSchema = z.enum(["Draft", "Posted", "Matched", "InTransit", "Delivered", "Cancelled", "Pending", "Accepted", "Rejected"]);
 
 const LoadSchema = z.object({
   _id: z.string(),
