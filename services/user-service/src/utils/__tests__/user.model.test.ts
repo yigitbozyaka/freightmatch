@@ -6,10 +6,6 @@ import { User, IUser } from '../../models/user.model';
  * and the new carrier/shipper profile sub-documents.
  */
 
-// Stub out mongoose.connect so the model can be used without a real DB
-beforeAll(() => {
-  // No actual DB connection needed — we test document creation in-memory
-});
 
 describe('User Model', () => {
   describe('ICarrierProfile fields', () => {
