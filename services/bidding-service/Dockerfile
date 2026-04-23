@@ -8,7 +8,7 @@ COPY services/load-service/package.json services/load-service/
 COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 COPY shared/instrumentation/package.json shared/instrumentation/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY tsconfig.base.json ./
 COPY services/bidding-service/tsconfig.json services/bidding-service/
 COPY shared/instrumentation/tsconfig.json shared/instrumentation/
