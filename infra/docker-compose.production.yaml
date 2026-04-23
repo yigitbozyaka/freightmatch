@@ -139,7 +139,9 @@ services:
     logging: *default-logging
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: infra/nginx/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"
@@ -148,8 +150,6 @@ services:
       - load-service
       - bidding-service
       - matching-service
-    volumes:
-      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     logging: *default-logging
 
 volumes:
