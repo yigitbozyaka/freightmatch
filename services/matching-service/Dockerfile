@@ -31,7 +31,7 @@ COPY shared/contracts/package.json shared/contracts/
 COPY shared/instrumentation/package.json shared/instrumentation/
 COPY --from=builder /app/shared/contracts/dist shared/contracts/dist
 COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 WORKDIR /app/services/matching-service
 COPY --from=builder /app/services/matching-service/dist ./dist
 EXPOSE 3004

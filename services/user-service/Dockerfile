@@ -28,7 +28,7 @@ COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 COPY shared/instrumentation/package.json shared/instrumentation/
 COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 WORKDIR /app/services/user-service
 COPY --from=builder /app/services/user-service/dist ./dist
 RUN mkdir -p uploads
