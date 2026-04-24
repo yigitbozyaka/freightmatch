@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-type ToastVariant = 'info' | 'error';
+type ToastVariant = "info" | "error";
 
 type ToastItem = {
   id: number;
@@ -27,7 +27,7 @@ export function useToastQueue(autoDismissMs = 4000) {
   }, []);
 
   const pushToast = useCallback(
-    (message: string, variant: ToastVariant = 'info') => {
+    (message: string, variant: ToastVariant = "info") => {
       idRef.current += 1;
       const id = idRef.current;
       setToasts((prev) => [...prev, { id, message, variant }]);
@@ -45,11 +45,18 @@ export function useToastQueue(autoDismissMs = 4000) {
   return { toasts, pushToast, dismissToast };
 }
 
-export function ToastHost({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: number) => void }) {
+export function ToastHost({
+  toasts,
+  onDismiss,
+}: {
+  toasts: ToastItem[];
+  onDismiss: (id: number) => void;
+}) {
   return (
     <div className="fixed bottom-4 right-4 z-50 flex w-[320px] flex-col gap-2">
       {toasts.map((toast) => {
-        const accent = toast.variant === 'error' ? 'border-[--color-danger]' : 'border-[--color-amber-400]';
+        const accent =
+          toast.variant === "error" ? "border-[--color-danger]" : "border-[--color-amber-400]";
         return (
           <div
             key={toast.id}
@@ -57,7 +64,13 @@ export function ToastHost({ toasts, onDismiss }: { toasts: ToastItem[]; onDismis
           >
             <div className="flex items-start justify-between gap-3">
               <p>{toast.message}</p>
-              <button type="button" onClick={() => onDismiss(toast.id)} className="text-slate-500 hover:text-slate-100">✕</button>
+              <button
+                type="button"
+                onClick={() => onDismiss(toast.id)}
+                className="text-slate-500 hover:text-slate-100"
+              >
+                ✕
+              </button>
             </div>
           </div>
         );

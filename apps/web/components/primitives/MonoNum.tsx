@@ -13,10 +13,10 @@ export function MonoNum({
   unit,
   maximumFractionDigits = 0,
   minimumFractionDigits = 0,
-  className = '',
+  className = "",
 }: MonoNumProps) {
-  const formatted = new Intl.NumberFormat('en-US', {
-    style: currency ? 'currency' : 'decimal',
+  const formatted = new Intl.NumberFormat("en-US", {
+    style: currency ? "currency" : "decimal",
     currency,
     maximumFractionDigits,
     minimumFractionDigits,
@@ -25,7 +25,7 @@ export function MonoNum({
   return (
     <span className={`font-mono tracking-[0.02em] tabular-nums ${className}`.trim()}>
       {formatted}
-      {unit ? ` ${unit}` : ''}
+      {unit ? ` ${unit}` : ""}
     </span>
   );
 }

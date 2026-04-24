@@ -1,4 +1,4 @@
-import { PrimitivesShowcase } from '@/components/primitives/_showcase';
+import { PrimitivesShowcase } from "./_components/primitives-showcase";
 import { DS1InteractiveShowcase } from "./_components/ds1-interactive-showcase";
 import { Button } from "@/components/primitives/button";
 import { Input } from "@/components/primitives/input";

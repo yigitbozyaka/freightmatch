@@ -1,28 +1,28 @@
 export type FreightStatus =
-  | 'Draft'
-  | 'Posted'
-  | 'Matched'
-  | 'InTransit'
-  | 'Delivered'
-  | 'Cancelled'
-  | 'Pending'
-  | 'Accepted'
-  | 'Rejected';
+  | "Draft"
+  | "Posted"
+  | "Matched"
+  | "InTransit"
+  | "Delivered"
+  | "Cancelled"
+  | "Pending"
+  | "Accepted"
+  | "Rejected";
 
 type StatusPillProps = {
   status: FreightStatus;
 };
 
 const statusClassMap: Record<FreightStatus, string> = {
-  Draft: 'text-slate-300 border-slate-600/80 bg-slate-800/70',
-  Posted: 'text-[--color-amber-400] border-[--color-amber-400]/60 bg-[--color-amber-400]/10',
-  Matched: 'text-[--color-transit] border-[--color-transit]/60 bg-[--color-transit]/10',
-  InTransit: 'text-[--color-transit] border-[--color-transit]/60 bg-[--color-transit]/10',
-  Delivered: 'text-[--color-go] border-[--color-go]/60 bg-[--color-go]/10',
-  Cancelled: 'text-slate-400 border-slate-700 bg-slate-900/80',
-  Pending: 'text-[--color-amber-400] border-[--color-amber-400]/60 bg-[--color-amber-400]/10',
-  Accepted: 'text-[--color-go] border-[--color-go]/60 bg-[--color-go]/10',
-  Rejected: 'text-[--color-danger] border-[--color-danger]/60 bg-[--color-danger]/10',
+  Draft: "text-[--color-amber-400] border-[--color-amber-400]/30 bg-[--color-amber-400]/5",
+  Posted: "text-[--color-amber-400] border-[--color-amber-400]/60 bg-[--color-amber-400]/10",
+  Matched: "text-[--color-transit] border-[--color-transit]/60 bg-[--color-transit]/10",
+  InTransit: "text-[--color-transit] border-[--color-transit]/60 bg-[--color-transit]/10",
+  Delivered: "text-[--color-go] border-[--color-go]/60 bg-[--color-go]/10",
+  Cancelled: "text-[--color-danger] border-[--color-danger]/35 bg-[--color-danger]/5",
+  Pending: "text-[--color-amber-400] border-[--color-amber-400]/60 bg-[--color-amber-400]/10",
+  Accepted: "text-[--color-go] border-[--color-go]/60 bg-[--color-go]/10",
+  Rejected: "text-[--color-danger] border-[--color-danger]/60 bg-[--color-danger]/10",
 };
 
 export function StatusPill({ status }: StatusPillProps) {

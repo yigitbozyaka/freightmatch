@@ -30,18 +30,22 @@ body {
   min-height: 100dvh;
 }
 
-<<<<<<< issue/47-ds2-primitives
 @keyframes status-flicker {
   0%,
-  18% { opacity: 1; }
+  18% {
+    opacity: 1;
+  }
 
   19%,
-  24% { opacity: 0.45; }
+  24% {
+    opacity: 0.45;
+  }
 
   25%,
-  100% { opacity: 1; }
+  100% {
+    opacity: 1;
+  }
 }
-=======
 .fm-focus-ring {
   outline: none;
 }
@@ -93,4 +97,3 @@ body {
     auto;
   backdrop-filter: blur(10px);
 }
->>>>>>> master
