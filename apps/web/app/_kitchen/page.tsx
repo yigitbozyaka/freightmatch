@@ -1,3 +1,4 @@
+import { PrimitivesShowcase } from "./_components/primitives-showcase";
 import { DS1InteractiveShowcase } from "./_components/ds1-interactive-showcase";
 import { Button } from "@/components/primitives/button";
 import { Input } from "@/components/primitives/input";
@@ -114,7 +115,7 @@ export default function KitchenPage() {
       </Section>
 
       <Section title="DS2 — Table, StatusPill, KpiTile, MonoNum, SectionHeader, Toast">
-        <Placeholder label="Components land here in issue #47" />
+        <PrimitivesShowcase />
       </Section>
 
       <Section title="DS3 — RouteMap">
