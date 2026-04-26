@@ -2,19 +2,19 @@
 
 @theme {
   /* Slate palette */
-  --color-slate-950: #0A0E12;
+  --color-slate-950: #0a0e12;
   --color-slate-900: #121820;
-  --color-slate-800: #1C2430;
-  --color-slate-700: #2A3441;
+  --color-slate-800: #1c2430;
+  --color-slate-700: #2a3441;
 
   /* Amber palette */
-  --color-amber-400: #F5B342;
-  --color-amber-500: #E89B1F;
+  --color-amber-400: #f5b342;
+  --color-amber-500: #e89b1f;
 
   /* Semantic tokens */
-  --color-danger: #E5484D;
-  --color-go: #3DD68C;
-  --color-transit: #4FA3E3;
+  --color-danger: #e5484d;
+  --color-go: #3dd68c;
+  --color-transit: #4fa3e3;
 
   /* Typography */
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
@@ -24,8 +24,76 @@
 
 html,
 body {
-  background-color: #0A0E12;
+  background-color: #0a0e12;
   color: #e2e8f0;
   font-family: var(--font-sans);
   min-height: 100dvh;
+}
+
+@keyframes status-flicker {
+  0%,
+  18% {
+    opacity: 1;
+  }
+
+  19%,
+  24% {
+    opacity: 0.45;
+  }
+
+  25%,
+  100% {
+    opacity: 1;
+  }
+}
+.fm-focus-ring {
+  outline: none;
+}
+
+.fm-focus-ring:focus-visible {
+  border-color: rgba(245, 179, 66, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(245, 179, 66, 0.95),
+    0 0 0 4px rgba(245, 179, 66, 0.16);
+}
+
+.fm-panel-surface {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(245, 179, 66, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 32%), rgba(18, 24, 32, 0.96);
+  box-shadow:
+    0 28px 72px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.fm-panel-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(245, 179, 66, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 179, 66, 0.04) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.52), transparent 88%);
+}
+
+.fm-panel-muted {
+  border: 1px solid rgba(42, 52, 65, 0.9);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%), rgba(18, 24, 32, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.fm-grid-overlay {
+  background:
+    linear-gradient(rgba(245, 179, 66, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 179, 66, 0.06) 1px, transparent 1px), rgba(10, 14, 18, 0.78);
+  background-size:
+    28px 28px,
+    28px 28px,
+    auto;
+  backdrop-filter: blur(10px);
 }

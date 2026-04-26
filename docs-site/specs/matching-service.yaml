@@ -1,0 +1,293 @@
+openapi: 3.1.0
+
+info:
+  title: Matching Service
+  version: 0.1.0
+  description: |
+    AI-powered load-to-carrier matching engine for the FreightMatch platform.
+    Uses Claude 3.5 Haiku (via OpenRouter) to score and rank carriers for a given load.
+    Also exposes an AI-assisted logistics chat endpoint for general freight queries.
+  contact:
+    name: FreightMatch
+    url: https://github.com/yigitbozyaka/freightmatch
+
+servers:
+  - url: http://localhost:3004
+    description: Local development
+  - url: /
+    description: Production (via NGINX gateway on port 80)
+
+tags:
+  - name: Matching
+    description: Load-to-carrier AI matching and recommendations
+  - name: Chat
+    description: AI-powered logistics chat assistant
+  - name: Observability
+    description: Health and metrics endpoints
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from the User Service `/api/users/login`
+
+  schemas:
+    MatchRecommendation:
+      type: object
+      properties:
+        carrierId:
+          type: string
+          example: "665a1b2c3d4e5f6789012346"
+        rank:
+          type: integer
+          example: 1
+        score:
+          type: number
+          format: float
+          example: 0.92
+      required: [carrierId, rank, score]
+
+    ChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+          example: user
+        content:
+          type: string
+          example: "Which carrier is best for refrigerated cargo from Istanbul to Ankara?"
+      required: [role, content]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: Invalid or expired token
+        timestamp:
+          type: string
+          format: date-time
+      required: [error, message]
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: UNAUTHORIZED
+            message: Invalid or expired token
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    NotFound:
+      description: Load not found or no recommendations available
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: NOT_FOUND
+            message: No recommendations found for this load
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    RateLimited:
+      description: Too many requests — rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: RATE_LIMITED
+            message: Too many requests, please try again later
+
+paths:
+  /api/match/{loadId}:
+    get:
+      tags: [Matching]
+      operationId: getMatchByLoadId
+      summary: Get cached carrier recommendations
+      security: []
+      description: |
+        Returns the cached ranked list of carrier recommendations for a given load.
+        Recommendations are generated asynchronously by the `/api/match/recommend` endpoint or triggered via Kafka.
+
+        This endpoint does **not** require authentication (accessed by internal services and the gateway).
+      parameters:
+        - name: loadId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665b2c3d4e5f67890123abcd"
+      responses:
+        '200':
+          description: Ranked carrier recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MatchRecommendation'
+              example:
+                - carrierId: "665a1b2c3d4e5f6789012346"
+                  rank: 1
+                  score: 0.92
+                - carrierId: "665a1b2c3d4e5f6789012347"
+                  rank: 2
+                  score: 0.78
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/match/recommend:
+    post:
+      tags: [Matching]
+      operationId: triggerRecommendation
+      summary: Trigger AI recommendation
+      security: []
+      description: |
+        Manually triggers the Claude 3.5 Haiku AI model to generate and store carrier recommendations
+        for a given load. Fetches all carriers from the User Service and ranks them against the load requirements.
+
+        This endpoint does **not** require authentication (called internally by the gateway or other services).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                loadId:
+                  type: string
+                  example: "665b2c3d4e5f67890123abcd"
+              required: [loadId]
+            example:
+              loadId: "665b2c3d4e5f67890123abcd"
+      responses:
+        '200':
+          description: Recommendations generated and stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  loadId:
+                    type: string
+                    example: "665b2c3d4e5f67890123abcd"
+                  recommendations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MatchRecommendation'
+              example:
+                loadId: "665b2c3d4e5f67890123abcd"
+                recommendations:
+                  - carrierId: "665a1b2c3d4e5f6789012346"
+                    rank: 1
+                    score: 0.92
+                  - carrierId: "665a1b2c3d4e5f6789012347"
+                    rank: 2
+                    score: 0.78
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/chat:
+    post:
+      tags: [Chat]
+      operationId: sendChatMessage
+      summary: AI logistics chat
+      description: |
+        Send a message to the AI-powered logistics assistant (Claude 3.5 Haiku via OpenRouter).
+        The assistant can answer questions about loads, carriers, freight routing, and the FreightMatch platform.
+
+        **Authentication required** (any role).
+
+        **Rate limit: 2 requests/second per user** — strictly enforced to manage API costs.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ChatMessage'
+                  minItems: 1
+                  example:
+                    - role: user
+                      content: "Which carrier is best for refrigerated cargo from Istanbul to Ankara?"
+              required: [messages]
+            example:
+              messages:
+                - role: user
+                  content: "Which carrier is best for refrigerated cargo from Istanbul to Ankara?"
+      responses:
+        '200':
+          description: AI assistant reply
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                    example: "Based on the available carriers, I recommend carrier X who specializes in refrigerated transport with a capacity of 18,000 kg and is based in Istanbul."
+              example:
+                reply: "Based on the available carriers, I recommend checking carriers with `refrigerated` truck type and high capacity ratings for this route."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /health:
+    get:
+      tags: [Observability]
+      operationId: healthCheck
+      summary: Health check
+      security: []
+      description: Returns service health status including MongoDB, Kafka, and OpenRouter connectivity.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              example:
+                status: ok
+                service: matching-service
+                version: "1.0.0"
+                timestamp: "2026-03-09T10:00:00.000Z"
+                checks:
+                  mongodb: ok
+        '503':
+          description: Service is degraded
+
+  /metrics:
+    get:
+      tags: [Observability]
+      operationId: metrics
+      summary: Prometheus metrics
+      security: []
+      description: Exposes Prometheus-compatible metrics for HTTP request durations and counts.
+      responses:
+        '200':
+          description: Prometheus text format
+          content:
+            text/plain:
+              example: |
+                # HELP http_request_duration_seconds HTTP request duration in seconds
+                # TYPE http_request_duration_seconds histogram
+                http_request_duration_seconds_bucket{method="POST",route="/api/chat",status_code="200",le="2"} 1

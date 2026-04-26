@@ -1,5 +1,5 @@
 import { userRepository } from '../repositories/user.repository';
-import { ICarrierProfile, IUser } from '../models/user.model';
+import { ICarrierProfile, IShipperProfile, IUser } from '../models/user.model';
 import { CarrierResponse, ErrorCode } from '../types';
 
 export class UserService {
@@ -12,12 +12,18 @@ export class UserService {
       throw error;
     }
 
-    return {
+    const base = {
       id: user._id.toString(),
       email: user.email,
       role: user.role,
       createdAt: user.createdAt.toISOString(),
     };
+
+    if (user.role === 'Carrier') {
+      return { ...base, carrierProfile: user.carrierProfile ?? null };
+    }
+
+    return { ...base, shipperProfile: user.shipperProfile ?? null };
   }
 
   async upsertCarrierProfile(userId: string, profile: ICarrierProfile) {
@@ -34,6 +40,24 @@ export class UserService {
       email: user.email,
       role: user.role,
       carrierProfile: user.carrierProfile ?? null,
+      createdAt: user.createdAt.toISOString(),
+    };
+  }
+
+  async upsertShipperProfile(userId: string, profile: IShipperProfile) {
+    const user = await userRepository.upsertShipperProfile(userId, profile);
+    if (!user) {
+      const error = new Error('User not found') as Error & { statusCode: number; errorCode: string };
+      error.statusCode = 404;
+      error.errorCode = ErrorCode.NOT_FOUND;
+      throw error;
+    }
+
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      shipperProfile: user.shipperProfile ?? null,
       createdAt: user.createdAt.toISOString(),
     };
   }
