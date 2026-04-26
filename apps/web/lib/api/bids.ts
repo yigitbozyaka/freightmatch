@@ -3,6 +3,15 @@ import { apiFetch } from "./client";
 
 const BidStatusSchema = z.enum(["Pending", "Accepted", "Rejected"]);
 
+const BidLoadSnapshotSchema = z
+  .object({
+    _id: z.string().optional(),
+    title: z.string().optional(),
+    origin: z.string().optional(),
+    destination: z.string().optional(),
+  })
+  .optional();
+
 const BidSchema = z.object({
   _id: z.string(),
   loadId: z.string(),
@@ -10,6 +19,9 @@ const BidSchema = z.object({
   priceUSD: z.number(),
   estimatedDeliveryHours: z.number(),
   status: BidStatusSchema,
+  submittedAt: z.string().optional(),
+  createdAt: z.string().optional(),
+  load: BidLoadSnapshotSchema,
 });
 
 export type Bid = z.infer<typeof BidSchema>;
