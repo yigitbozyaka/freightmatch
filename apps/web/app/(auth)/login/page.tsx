@@ -120,6 +120,7 @@ export default function RegisterPage() {
               </p>
             ) : null}
           </div>
+
           <div className="space-y-1.5">
             <label
               htmlFor="password"
@@ -152,6 +153,7 @@ export default function RegisterPage() {
               <p className="font-mono text-[11px] text-slate-400">Strength: {strength.label}</p>
             </div>
           </div>
+
           <fieldset
             className="space-y-2"
             aria-describedby={errors.role ? "register-role-error" : undefined}
@@ -199,6 +201,7 @@ export default function RegisterPage() {
               </p>
             ) : null}
           </fieldset>
+
           {submitError ? (
             <p
               role="alert"
@@ -208,6 +211,7 @@ export default function RegisterPage() {
               {submitError}
             </p>
           ) : null}
+
           <button
             type="submit"
             disabled={isSubmitting}
