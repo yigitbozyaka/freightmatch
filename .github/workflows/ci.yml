@@ -43,6 +43,12 @@ jobs:
               - 'services/bidding-service/**'
             matching:
               - 'services/matching-service/**'
+            web:
+              - 'apps/web/**'
+
+      - name: Build Web (Next.js)
+        if: steps.filter.outputs.web == 'true'
+        run: pnpm --filter web build
 
       - name: Build User Service
         if: steps.filter.outputs.user == 'true'

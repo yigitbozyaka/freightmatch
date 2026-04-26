@@ -32,6 +32,18 @@ export interface CarrierProfileResponse {
   homeCity: string;
   rating: number;
   completedShipments: number;
+  profilePhotoUrl: string | null;
+  avgEtaHours: number;
+  trustScore: number;
+  bio: string | null;
+}
+
+export interface ShipperProfileResponse {
+  companyName: string | null;
+  profilePhotoUrl: string | null;
+  bio: string | null;
+  completedLoads: number;
+  avgTimeToAcceptHours: number;
 }
 
 export interface CarrierResponse {

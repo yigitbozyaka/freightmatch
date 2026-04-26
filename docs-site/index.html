@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>FreightMatch API Reference</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="FreightMatch microservices API reference — User, Load, Bidding, and Matching services."
+    />
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference("#app", {
+        sources: [
+          { title: "User Service", url: "specs/user-service.yaml" },
+          { title: "Load Service", url: "specs/load-service.yaml" },
+          { title: "Bidding Service", url: "specs/bidding-service.yaml" },
+          { title: "Matching Service", url: "specs/matching-service.yaml" },
+        ],
+        theme: "orange",
+      });
+    </script>
+  </body>
+</html>

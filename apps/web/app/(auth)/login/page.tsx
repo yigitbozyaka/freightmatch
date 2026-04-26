@@ -1,3 +1,6 @@
+
+
+
 'use client';
 
 import { type FormEvent, useState } from 'react';
@@ -71,6 +74,7 @@ export default function LoginPage() {
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-10">
       <GridBackdrop />
+      {/* Dekoratif Arka Plan Efektleri */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,179,66,0.08),transparent_55%)]" />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(#fff_0.5px,transparent_0.5px)] [background-size:3px_3px]" />
 
@@ -140,3 +144,4 @@ export default function LoginPage() {
     </main>
   );
 }
+```
