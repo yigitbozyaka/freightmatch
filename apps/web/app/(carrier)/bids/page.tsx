@@ -1,5 +1,4 @@
 'use client';
-
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -8,7 +7,6 @@ import { Table } from '@/components/primitives/Table';
 import { listMine, type Bid } from '@/lib/api/bids';
 
 type TabKey = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'ALL';
-
 const TABS = ['PENDING', 'ACCEPTED', 'REJECTED', 'ALL'] as const;
 const CARRIER_BIDS_QUERY_KEY = ['57-carrier-bids'] as const;
 
@@ -24,7 +22,6 @@ function formatSubmittedAt(value?: string) {
   if (!value) return '—';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '—';
-
   return parsed.toLocaleString('en-US', {
     month: 'short',
     day: '2-digit',
@@ -49,10 +46,8 @@ function getTitleLabel(bid: Bid) {
 function getLatestActivityAt(bid: Bid) {
   const submittedAt = bid.submittedAt ? new Date(bid.submittedAt).getTime() : Number.NaN;
   if (!Number.isNaN(submittedAt)) return submittedAt;
-
   const createdAt = bid.createdAt ? new Date(bid.createdAt).getTime() : Number.NaN;
   if (!Number.isNaN(createdAt)) return createdAt;
-
   return 0;
 }
 
@@ -64,12 +59,12 @@ function toSafeMarketplacePath(loadId: string) {
 export default function CarrierBidsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>('PENDING');
-
   const { data = [], isLoading, isError } = useQuery({
     queryKey: CARRIER_BIDS_QUERY_KEY,
     queryFn: listMine,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    // refetchOnWindowFocus intentionally not disabled — staleTime handles redundant refetches
   });
 
   const sortedBids = useMemo(() => {
@@ -80,7 +75,6 @@ export default function CarrierBidsPage() {
     const pending = sortedBids.filter((bid) => bid.status === 'Pending');
     const accepted = sortedBids.filter((bid) => bid.status === 'Accepted');
     const rejected = sortedBids.filter((bid) => bid.status === 'Rejected');
-
     return {
       PENDING: pending,
       ACCEPTED: accepted,
@@ -105,12 +99,10 @@ export default function CarrierBidsPage() {
             Bid Portfolio
           </h1>
         </div>
-
         <p className="pt-1 font-mono text-xs uppercase tracking-wider text-slate-400">
           {grouped.summary.pending} PENDING · {grouped.summary.won} WON · {grouped.summary.lost} LOST
         </p>
       </header>
-
       <section className="flex flex-wrap gap-2 rounded-lg border border-slate-800 bg-slate-900/40 p-2">
         {TABS.map((tab) => {
           const isActive = tab === activeTab;
@@ -130,7 +122,6 @@ export default function CarrierBidsPage() {
           );
         })}
       </section>
-
       {isLoading ? (
         <div className="rounded border border-slate-800 p-6 font-mono text-sm text-slate-400">Loading bids...</div>
       ) : isError ? (
@@ -139,7 +130,7 @@ export default function CarrierBidsPage() {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded border border-dashed border-slate-700 p-10 text-center font-mono text-sm uppercase tracking-[0.2em] text-slate-500">
-          NO {activeTab} BIDS
+          NO {activeTab === 'ALL' ? '' : `${activeTab} `}BIDS
         </div>
       ) : (
         <Table<Bid>
@@ -147,13 +138,13 @@ export default function CarrierBidsPage() {
             {
               key: 'loadId',
               header: 'Load Title',
-              sortable: false,
+              sortable: false, // rendered value is getTitleLabel(), not loadId — sort would be misleading
               render: (row) => getTitleLabel(row),
             },
             {
               key: 'load',
               header: 'Route',
-              sortable: false,
+              sortable: false, // rendered value is a composite string; load is an object, not sortable
               render: (row) => getRouteLabel(row),
             },
             {
