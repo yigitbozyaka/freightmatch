@@ -1,5 +1,4 @@
 "use client";
-
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
@@ -50,7 +49,6 @@ export default function RegisterPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const parsed = RegisterSchema.safeParse(values);
-
     if (!parsed.success) {
       const formErrors: Partial<Record<keyof RegisterValues, string>> = {};
       const flattened = parsed.error.flatten().fieldErrors;
@@ -60,7 +58,6 @@ export default function RegisterPage() {
       setErrors(formErrors);
       return;
     }
-
     setIsSubmitting(true);
     try {
       await register(parsed.data);
@@ -87,7 +84,6 @@ export default function RegisterPage() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(#fff_0.5px,transparent_0.5px)] [background-size:3px_3px]"
       />
-
       <section className="relative z-10 w-full max-w-md rounded-xl border border-slate-800 bg-slate-950/90 p-7 shadow-[0_0_80px_rgba(0,0,0,0.45)]">
         <p className="font-mono text-xs tracking-[0.2em] text-amber-400 uppercase">FreightMatch</p>
         <h1
@@ -99,7 +95,6 @@ export default function RegisterPage() {
         <p className="mt-1 font-mono text-xs uppercase tracking-wider text-slate-400">
           Create operator account
         </p>
-
         <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
           <div className="space-y-1.5">
             <label
@@ -125,7 +120,6 @@ export default function RegisterPage() {
               </p>
             ) : null}
           </div>
-
           <div className="space-y-1.5">
             <label
               htmlFor="password"
@@ -151,7 +145,6 @@ export default function RegisterPage() {
                 {errors.password}
               </p>
             ) : null}
-
             <div id="password-strength" className="space-y-1">
               <div className="h-1.5 w-full overflow-hidden rounded bg-slate-800">
                 <div className={`h-full ${strength.width} ${strength.color} transition-all`} />
@@ -159,7 +152,6 @@ export default function RegisterPage() {
               <p className="font-mono text-[11px] text-slate-400">Strength: {strength.label}</p>
             </div>
           </div>
-
           <fieldset
             className="space-y-2"
             aria-describedby={errors.role ? "register-role-error" : undefined}
@@ -207,7 +199,6 @@ export default function RegisterPage() {
               </p>
             ) : null}
           </fieldset>
-
           {submitError ? (
             <p
               role="alert"
@@ -217,7 +208,6 @@ export default function RegisterPage() {
               {submitError}
             </p>
           ) : null}
-
           <button
             type="submit"
             disabled={isSubmitting}
