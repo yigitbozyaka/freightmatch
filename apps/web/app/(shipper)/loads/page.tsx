@@ -1,5 +1,4 @@
 'use client';
-
 import Link from 'next/link';
 import { Suspense, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,6 +9,7 @@ import { listMyLoads, type Load } from '@/lib/api/loads';
 
 const PAGE_SIZE = 20;
 const MAX_WEIGHT = 50000;
+
 const STATUS_OPTIONS = [
   'Draft',
   'Posted',
@@ -37,19 +37,15 @@ function formatDate(value?: string) {
   });
 }
 
-function parseNumber(value: string | null, fallback: number) {
-  if (!value) return fallback;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
 function parseClampedNumber(
   value: string | null,
   fallback: number,
   { min, max, integer = false }: { min: number; max: number; integer?: boolean },
 ) {
-  const parsed = parseNumber(value, fallback);
-  const rounded = integer ? Math.trunc(parsed) : parsed;
+  if (!value) return fallback;
+  const parsed = Number(value);
+  const num = Number.isFinite(parsed) ? parsed : fallback;
+  const rounded = integer ? Math.trunc(num) : num;
   return Math.min(max, Math.max(min, rounded));
 }
 
@@ -63,6 +59,7 @@ function ShipperLoadsContent() {
   );
   const cargoType = searchParams.get('cargoType') ?? '';
   const query = searchParams.get('q') ?? '';
+
   const parsedMinWeight = parseClampedNumber(searchParams.get('minWeight'), 0, {
     min: 0,
     max: MAX_WEIGHT,
@@ -73,6 +70,7 @@ function ShipperLoadsContent() {
   });
   const minWeight = Math.min(parsedMinWeight, parsedMaxWeight);
   const maxWeight = Math.max(parsedMinWeight, parsedMaxWeight);
+
   const page = parseClampedNumber(searchParams.get('page'), 1, {
     min: 1,
     max: Number.MAX_SAFE_INTEGER,
@@ -81,36 +79,31 @@ function ShipperLoadsContent() {
 
   const setParam = (name: string, value?: string) => {
     const params = new URLSearchParams(searchParams.toString());
-
     if (!value) params.delete(name);
     else params.set(name, value);
-
     if (name !== 'page') params.set('page', '1');
-
     const nextQuery = params.toString();
     router.replace(nextQuery ? `/loads?${nextQuery}` : '/loads');
   };
 
+  // Filtering is done client-side over the full dataset.
+  // Do NOT pass filter/page params to the API until the server returns a total-count
+  // alongside paginated results — otherwise pagination totals will be wrong.
   const { data = [], isLoading, isError } = useQuery({
-    queryKey: [
-      'shipper-loads',
-      selectedStatuses.join(','),
-      cargoType,
-      minWeight,
-      maxWeight,
-      query,
-    ],
+    queryKey: ['shipper-loads'],
     queryFn: () => listMyLoads(),
   });
 
   const cargoTypeOptions = useMemo(
-    () => Array.from(new Set(data.map((load) => load.cargoType))).sort((a, b) => a.localeCompare(b)),
+    () =>
+      Array.from(new Set(data.map((load) => load.cargoType)))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b)),
     [data],
   );
 
   const filteredLoads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-
     return data.filter((load) => {
       const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(load.status);
       const matchesCargoType = !cargoType || load.cargoType === cargoType;
@@ -120,7 +113,6 @@ function ShipperLoadsContent() {
         [load.title, load.origin, load.destination].some((field) =>
           field.toLowerCase().includes(normalizedQuery),
         );
-
       return matchesStatus && matchesCargoType && matchesWeight && matchesQuery;
     });
   }, [cargoType, data, maxWeight, minWeight, query, selectedStatuses]);
@@ -137,11 +129,10 @@ function ShipperLoadsContent() {
       <header className="flex items-center justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-widest text-amber-400">Shipper / Loads</p>
-          <h1 className="font-display text-2xl font-bold text-slate-100">
+          <h1 className="text-2xl font-bold text-slate-100" style={{ fontFamily: 'var(--font-display)' }}>
             My Loads
           </h1>
         </div>
-
         <Link
           href="/loads/new"
           className="rounded border border-amber-400 bg-amber-400/10 px-4 py-2 font-mono text-xs uppercase tracking-[0.18em] text-amber-300 transition hover:bg-amber-400/20"
@@ -149,14 +140,12 @@ function ShipperLoadsContent() {
           + New Load
         </Link>
       </header>
-
       <section className="grid gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2">
           <p className="font-mono text-[11px] uppercase tracking-widest text-slate-400">Status</p>
           <div className="flex flex-wrap gap-2">
             {STATUS_OPTIONS.map((status) => {
               const checked = selectedStatuses.includes(status);
-
               return (
                 <label
                   key={status}
@@ -169,7 +158,6 @@ function ShipperLoadsContent() {
                       const nextStatuses = event.target.checked
                         ? [...selectedStatuses, status]
                         : selectedStatuses.filter((value) => value !== status);
-
                       setParam('status', nextStatuses.length > 0 ? nextStatuses.join(',') : undefined);
                     }}
                   />
@@ -179,7 +167,6 @@ function ShipperLoadsContent() {
             })}
           </div>
         </div>
-
         <label className="space-y-2">
           <span className="font-mono text-[11px] uppercase tracking-widest text-slate-400">Cargo Type</span>
           <select
@@ -195,7 +182,6 @@ function ShipperLoadsContent() {
             ))}
           </select>
         </label>
-
         <div className="space-y-2">
           <p className="font-mono text-[11px] uppercase tracking-widest text-slate-400">
             Weight (kg): {minWeight} - {maxWeight}
@@ -223,7 +209,6 @@ function ShipperLoadsContent() {
             }}
           />
         </div>
-
         <label className="space-y-2">
           <span className="font-mono text-[11px] uppercase tracking-widest text-slate-400">Search</span>
           <input
@@ -235,7 +220,6 @@ function ShipperLoadsContent() {
           />
         </label>
       </section>
-
       {isLoading ? (
         <div className="rounded border border-slate-800 p-6 font-mono text-sm text-slate-400">
           Loading loads...
@@ -304,7 +288,6 @@ function ShipperLoadsContent() {
           rowKey={(row) => row._id}
         />
       )}
-
       <footer className="flex items-center justify-end gap-2">
         <button
           type="button"
