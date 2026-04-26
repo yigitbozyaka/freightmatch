@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-type ToastVariant = 'info' | 'error';
+type ToastVariant = "info" | "error";
 
 type ToastItem = {
   id: number;
@@ -12,34 +12,34 @@ type ToastItem = {
 
 export function useToastQueue(autoDismissMs = 4000) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const nextToastId = useRef(1);
-  const timeoutIds = useRef<number[]>([]);
+  const timeoutRefs = useRef<number[]>([]);
+  const idRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      timeoutRefs.current.forEach((id) => window.clearTimeout(id));
+      timeoutRefs.current = [];
+    };
+  }, []);
 
   const dismissToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
   const pushToast = useCallback(
-    (message: string, variant: ToastVariant = 'info') => {
-      const id = nextToastId.current++;
+    (message: string, variant: ToastVariant = "info") => {
+      idRef.current += 1;
+      const id = idRef.current;
       setToasts((prev) => [...prev, { id, message, variant }]);
+
       const timeoutId = window.setTimeout(() => {
         dismissToast(id);
-        timeoutIds.current = timeoutIds.current.filter((activeId) => activeId !== timeoutId);
+        timeoutRefs.current = timeoutRefs.current.filter((item) => item !== timeoutId);
       }, autoDismissMs);
-      timeoutIds.current.push(timeoutId);
+
+      timeoutRefs.current.push(timeoutId);
     },
     [autoDismissMs, dismissToast],
-  );
-
-  useEffect(
-    () => () => {
-      for (const timeoutId of timeoutIds.current) {
-        window.clearTimeout(timeoutId);
-      }
-      timeoutIds.current = [];
-    },
-    [],
   );
 
   return { toasts, pushToast, dismissToast };
@@ -55,7 +55,8 @@ export function ToastHost({
   return (
     <div className="fixed bottom-4 right-4 z-50 flex w-[320px] flex-col gap-2">
       {toasts.map((toast) => {
-        const accent = toast.variant === 'error' ? 'border-[--color-danger]' : 'border-amber-400';
+        const accent =
+          toast.variant === "error" ? "border-[--color-danger]" : "border-[--color-amber-400]";
         return (
           <div
             key={toast.id}
