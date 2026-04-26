@@ -1,5 +1,4 @@
 'use client';
-
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { ToastHost, useToastQueue } from '@/components/primitives/ToastHost';
@@ -29,13 +28,17 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
-    hasHydratedPrefs.current = true;
-    if (!raw) return;
+    if (!raw) {
+      hasHydratedPrefs.current = true;
+      return;
+    }
     try {
       const parsed = PrefsSchema.parse(JSON.parse(raw));
       setPrefs(parsed);
     } catch {
       localStorage.removeItem(STORAGE_KEY);
+    } finally {
+      hasHydratedPrefs.current = true;
     }
   }, []);
 
@@ -50,7 +53,6 @@ export default function SettingsPage() {
       pushToast('Password must be at least 8 characters.', 'error');
       return;
     }
-
     // Stub: endpoint not wired yet in v1
     pushToast('Password change is coming soon.', 'info');
     setNewPassword('');
@@ -64,20 +66,17 @@ export default function SettingsPage() {
           Account Settings
         </h1>
       </header>
-
       <section className="space-y-4 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
         <h2 className="font-mono text-sm uppercase tracking-widest text-slate-300">Security</h2>
-
         <div className="space-y-1.5">
           <label className="font-mono text-xs uppercase tracking-widest text-slate-400">Email (read-only)</label>
           <input
-            value={user?.email ?? ''}
+            value={user?.email ?? '—'}
             readOnly
             aria-readonly="true"
             className="w-full rounded border border-slate-800 bg-slate-950 px-3 py-2.5 font-mono text-sm text-slate-400"
           />
         </div>
-
         <form onSubmit={onPasswordSubmit} className="space-y-1.5">
           <label htmlFor="newPassword" className="font-mono text-xs uppercase tracking-widest text-slate-400">
             New Password
@@ -99,10 +98,8 @@ export default function SettingsPage() {
           </button>
         </form>
       </section>
-
       <section className="space-y-4 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
         <h2 className="font-mono text-sm uppercase tracking-widest text-slate-300">Notifications</h2>
-
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 font-mono text-sm text-slate-200">
             <input
@@ -119,7 +116,6 @@ export default function SettingsPage() {
             Coming soon
           </span>
         </div>
-
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 font-mono text-sm text-slate-200">
             <input
@@ -137,13 +133,11 @@ export default function SettingsPage() {
           </span>
         </div>
       </section>
-
       <section className="space-y-3 rounded-lg border border-[--color-danger]/40 bg-[--color-danger]/10 p-5">
         <h2 className="font-mono text-sm uppercase tracking-widest text-[--color-danger]">Danger Zone</h2>
         <button
           type="button"
           disabled
-          title="Please contact support to delete your account."
           className="cursor-not-allowed rounded border border-[--color-danger]/50 px-4 py-2 font-mono text-xs uppercase tracking-[0.15em] text-[--color-danger] opacity-60"
         >
           Delete Account
@@ -152,7 +146,6 @@ export default function SettingsPage() {
           Account deletion is currently handled by support. Email support to submit a deletion request.
         </p>
       </section>
-
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
     </main>
   );
