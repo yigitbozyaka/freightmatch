@@ -1,5 +1,4 @@
 'use client';
-
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
@@ -12,6 +11,9 @@ type ShipperProfile = {
   avgTimeToAcceptHours: number;
   photoUrl?: string;
 };
+
+const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+const MAX_PHOTO_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
 
 export default function ShipperProfilePage() {
   const { toasts, pushToast, dismissToast } = useToastQueue();
@@ -49,18 +51,18 @@ export default function ShipperProfilePage() {
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/webp'];
-    if (!allowedMimeTypes.includes(file.type)) {
+    if (!(ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {
       pushToast('Photo must be PNG, JPEG, or WebP.', 'error');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > MAX_PHOTO_SIZE_BYTES) {
       pushToast('Photo must be 2 MB or smaller.', 'error');
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      setProfile((prev) => ({ ...prev, photoUrl: String(reader.result ?? '') })); // TODO: Replace preview-only flow with real upload endpoint.
+      // TODO: Replace preview-only flow with real upload endpoint (multipart or presigned URL).
+      setProfile((prev) => ({ ...prev, photoUrl: String(reader.result ?? '') }));
       setHasUnsavedPhotoPreview(true);
     };
     reader.readAsDataURL(file);
@@ -69,7 +71,6 @@ export default function ShipperProfilePage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!initialProfile) return;
-
     const dirtyFields: Partial<Pick<ShipperProfile, 'companyName' | 'bio'>> = {};
     if (profile.companyName !== initialProfile.companyName) {
       dirtyFields.companyName = profile.companyName;
@@ -81,7 +82,6 @@ export default function ShipperProfilePage() {
       pushToast('Nothing changed yet.', 'info');
       return;
     }
-
     setIsSaving(true);
     try {
       await apiFetch('api/users/shipper-profile', {
@@ -105,7 +105,6 @@ export default function ShipperProfilePage() {
           Company Profile
         </h1>
       </header>
-
       {profileQuery.isLoading ? (
         <p className="font-mono text-xs uppercase tracking-wider text-slate-400">Loading profile…</p>
       ) : null}
@@ -114,14 +113,13 @@ export default function ShipperProfilePage() {
           Could not load your profile. Please refresh and try again.
         </p>
       ) : null}
-
       <section className="grid gap-4 lg:grid-cols-3">
         <article className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
           <p className="font-mono text-xs uppercase tracking-widest text-slate-400">Photo</p>
           <div className="mt-3 flex items-center gap-3">
             <div className="flex h-16 w-16 items-center justify-center rounded-full border border-slate-700 bg-slate-800 font-mono text-sm text-slate-200">
               {profile.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                // eslint-disable-next-line @next/next/no-img-element -- TODO: migrate to next/image when real upload endpoint lands
                 <img src={profile.photoUrl} alt="Company avatar" className="h-full w-full rounded-full object-cover" />
               ) : (
                 initials
@@ -138,12 +136,10 @@ export default function ShipperProfilePage() {
             </p>
           ) : null}
         </article>
-
         <article className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
           <p className="font-mono text-xs uppercase tracking-widest text-slate-400">Completed Loads</p>
           <p className="mt-2 font-mono text-3xl font-bold text-slate-100 tabular-nums">{profile.completedLoads}</p>
         </article>
-
         <article className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
           <p className="font-mono text-xs uppercase tracking-widest text-slate-400">Avg Time To Accept</p>
           <p className="mt-2 font-mono text-3xl font-bold text-slate-100 tabular-nums">
@@ -151,7 +147,6 @@ export default function ShipperProfilePage() {
           </p>
         </article>
       </section>
-
       <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
         <div className="space-y-1.5">
           <label htmlFor="companyName" className="font-mono text-xs uppercase tracking-widest text-slate-300">
@@ -164,7 +159,6 @@ export default function ShipperProfilePage() {
             className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2.5 font-mono text-sm text-slate-100 outline-none focus:border-amber-400"
           />
         </div>
-
         <div className="space-y-1.5">
           <label htmlFor="bio" className="font-mono text-xs uppercase tracking-widest text-slate-300">
             Bio
@@ -177,7 +171,6 @@ export default function ShipperProfilePage() {
             className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2.5 font-mono text-sm text-slate-100 outline-none focus:border-amber-400"
           />
         </div>
-
         <button
           type="submit"
           disabled={isSaving || profileQuery.isLoading || profileQuery.isError || !initialProfile}
@@ -186,7 +179,6 @@ export default function ShipperProfilePage() {
           {isSaving ? 'Saving...' : 'Save Profile'}
         </button>
       </form>
-
       <ToastHost toasts={toasts} onDismiss={dismissToast} />
     </main>
   );
