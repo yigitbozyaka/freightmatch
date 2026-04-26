@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { apiFetch } from "./client";
 
-const LoadStatusSchema = z.enum(["Draft", "Posted", "Matched", "InTransit", "Delivered"]);
+const LoadStatusSchema = z.enum(["Draft", "Posted", "Matched", "InTransit", "Delivered", "Cancelled", "Pending", "Accepted", "Rejected"]);
 
 const LoadSchema = z.object({
   _id: z.string(),
@@ -13,6 +13,8 @@ const LoadSchema = z.object({
   weightKg: z.number(),
   deadlineHours: z.number(),
   status: LoadStatusSchema,
+  bidsCount: z.number().optional(),
+  createdAt: z.string().optional(),
   statusHistory: z
     .array(
       z.object({
@@ -46,6 +48,16 @@ export type ListAvailableParams = {
   cargoType?: string;
 };
 
+export type ListMyLoadsParams = {
+  status?: string[];
+  cargoType?: string;
+  minWeight?: number;
+  maxWeight?: number;
+  q?: string;
+  page?: number;
+  limit?: number;
+};
+
 export async function createLoad(input: CreateLoadInput): Promise<Load> {
   const data = await apiFetch<unknown>("api/loads", {
     method: "POST",
@@ -56,6 +68,21 @@ export async function createLoad(input: CreateLoadInput): Promise<Load> {
 
 export async function list(): Promise<Load[]> {
   const data = await apiFetch<unknown>("api/loads/my-loads");
+  return z.array(LoadSchema).parse(data);
+}
+
+export async function listMyLoads(params?: ListMyLoadsParams): Promise<Load[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status.length > 0) query.set("status", params.status.join(","));
+  if (params?.cargoType) query.set("cargoType", params.cargoType);
+  if (typeof params?.minWeight === "number") query.set("minWeight", String(params.minWeight));
+  if (typeof params?.maxWeight === "number") query.set("maxWeight", String(params.maxWeight));
+  if (params?.q) query.set("q", params.q);
+  if (typeof params?.page === "number") query.set("page", String(params.page));
+  if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+
+  const qs = query.size > 0 ? `?${query.toString()}` : "";
+  const data = await apiFetch<unknown>(`api/loads/my-loads${qs}`);
   return z.array(LoadSchema).parse(data);
 }
 
