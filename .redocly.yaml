@@ -1,0 +1,19 @@
+apis:
+  user-service:
+    root: docs-site/specs/user-service.yaml
+  load-service:
+    root: docs-site/specs/load-service.yaml
+  bidding-service:
+    root: docs-site/specs/bidding-service.yaml
+  matching-service:
+    root: docs-site/specs/matching-service.yaml
+
+rules:
+  # Public endpoints (register, login, refresh, health, metrics) legitimately have no security
+  security-defined: off
+  # Localhost servers are intentional for local dev
+  no-server-example.com: off
+  # License info not required for internal project specs
+  info-license: off
+  # Health and metrics endpoints intentionally have no error responses
+  operation-4xx-response: warn

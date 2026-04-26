@@ -8,7 +8,7 @@ COPY services/bidding-service/package.json services/bidding-service/
 COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 COPY shared/instrumentation/package.json shared/instrumentation/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY tsconfig.base.json ./
 COPY services/user-service/tsconfig.json services/user-service/
 COPY shared/instrumentation/tsconfig.json shared/instrumentation/
@@ -28,8 +28,9 @@ COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 COPY shared/instrumentation/package.json shared/instrumentation/
 COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 WORKDIR /app/services/user-service
 COPY --from=builder /app/services/user-service/dist ./dist
+RUN mkdir -p uploads
 EXPOSE 3001
 CMD ["node", "dist/index.js"]

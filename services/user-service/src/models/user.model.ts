@@ -8,6 +8,18 @@ export interface ICarrierProfile {
   homeCity: string;
   rating: number;
   completedShipments: number;
+  profilePhotoUrl: string | null;
+  avgEtaHours: number;
+  trustScore: number;
+  bio: string | null;
+}
+
+export interface IShipperProfile {
+  companyName: string | null;
+  profilePhotoUrl: string | null;
+  bio: string | null;
+  completedLoads: number;
+  avgTimeToAcceptHours: number;
 }
 
 export interface IUser extends Document {
@@ -16,6 +28,7 @@ export interface IUser extends Document {
   passwordHash: string;
   role: 'Shipper' | 'Carrier';
   carrierProfile?: ICarrierProfile;
+  shipperProfile?: IShipperProfile;
   failedLoginAttempts: number;
   lockUntil: Date | null;
   createdAt: Date;
@@ -70,6 +83,53 @@ const userSchema = new Schema<IUser>(
           max: 5,
         },
         completedShipments: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        profilePhotoUrl: {
+          type: String,
+          default: null,
+        },
+        avgEtaHours: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        trustScore: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 100,
+        },
+        bio: {
+          type: String,
+          default: null,
+        },
+      },
+      required: false,
+      _id: false,
+    },
+    shipperProfile: {
+      type: {
+        companyName: {
+          type: String,
+          default: null,
+        },
+        profilePhotoUrl: {
+          type: String,
+          default: null,
+        },
+        bio: {
+          type: String,
+          default: null,
+        },
+        completedLoads: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        avgTimeToAcceptHours: {
           type: Number,
           default: 0,
           min: 0,

@@ -5,6 +5,18 @@ import { useAuth } from "@/lib/hooks/useAuth";
 
 export function Navbar() {
   const { user, logout } = useAuth();
+  const rolePillStyle =
+    user?.role === "Shipper"
+      ? {
+          color: "var(--color-transit)",
+          borderColor: "color-mix(in srgb, var(--color-transit) 30%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--color-transit) 10%, transparent)",
+        }
+      : {
+          color: "var(--color-go)",
+          borderColor: "color-mix(in srgb, var(--color-go) 30%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--color-go) 10%, transparent)",
+        };
 
   return (
     <header className="h-12 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm flex items-center px-6 gap-4">
@@ -20,14 +32,7 @@ export function Navbar() {
 
       {user && (
         <>
-          <span
-            className={[
-              "font-mono text-xs px-2 py-0.5 rounded border",
-              user.role === "Shipper"
-                ? "text-[--color-transit] border-[--color-transit]/30 bg-[--color-transit]/10"
-                : "text-[--color-go] border-[--color-go]/30 bg-[--color-go]/10",
-            ].join(" ")}
-          >
+          <span className="rounded border px-2 py-0.5 font-mono text-xs" style={rolePillStyle}>
             {user.role}
           </span>
 
