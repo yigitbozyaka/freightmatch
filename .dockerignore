@@ -6,4 +6,5 @@ node_modules
 .github
 docs
 infra
+!infra/nginx/nginx.conf
 *.md

@@ -32,7 +32,7 @@ function refreshOpts() {
 const isProd = () => process.env.NODE_ENV === "production";
 
 async function attemptRefresh(
-  cookieStore: Awaited<ReturnType<typeof cookies>>
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
 ): Promise<string | null> {
   const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value;
   if (!refreshToken) return null;
@@ -70,11 +70,9 @@ async function proxyRequest(req: NextRequest, ctx: RouteContext): Promise<NextRe
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  const body =
-    req.method !== "GET" && req.method !== "HEAD" ? await req.text() : undefined;
+  const body = req.method !== "GET" && req.method !== "HEAD" ? await req.text() : undefined;
 
-  const callUpstream = () =>
-    fetch(upstreamUrl, { method: req.method, headers, body });
+  const callUpstream = () => fetch(upstreamUrl, { method: req.method, headers, body });
 
   let upstream = await callUpstream();
 

@@ -1,5 +1,6 @@
 import { DS1InteractiveShowcase } from "./_components/ds1-interactive-showcase";
 import { RouteMap } from "@/components/maps/RouteMap";
+import { PrimitivesShowcase } from "./_components/primitives-showcase";
 import { Button } from "@/components/primitives/button";
 import { Input } from "@/components/primitives/input";
 
@@ -115,7 +116,7 @@ export default function KitchenPage() {
       </Section>
 
       <Section title="DS2 — Table, StatusPill, KpiTile, MonoNum, SectionHeader, Toast">
-        <Placeholder label="Components land here in issue #47" />
+        <PrimitivesShowcase />
       </Section>
 
       <Section title="DS3 — RouteMap">
@@ -154,14 +155,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </h2>
       {children}
     </section>
-  );
-}
-
-function Placeholder({ label }: { label: string }) {
-  return (
-    <div className="flex h-20 items-center justify-center rounded border border-dashed border-slate-700">
-      <span className="font-mono text-xs text-slate-600">{label}</span>
-    </div>
   );
 }
 

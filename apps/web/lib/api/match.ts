@@ -32,7 +32,7 @@ export async function getRecommendations(loadId: string): Promise<Recommendation
 }
 
 export async function triggerRecommendation(
-  input: TriggerRecommendationInput
+  input: TriggerRecommendationInput,
 ): Promise<RecommendationResult> {
   const data = await apiFetch<unknown>("api/match/recommend", {
     method: "POST",

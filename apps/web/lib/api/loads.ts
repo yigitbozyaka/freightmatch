@@ -18,7 +18,7 @@ const LoadSchema = z.object({
       z.object({
         from: z.string().nullable(),
         to: z.string(),
-      })
+      }),
     )
     .optional(),
 });

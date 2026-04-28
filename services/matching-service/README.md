@@ -1,32 +1,53 @@
 # Matching Service
 
 ## Overview
-The Matching Service is the AI-powered recommendation engine of FreightMatch. It uses the Anthropic Claude AI API. It consumes `load.created` events via Kafka. Once a load is posted, it analyzes the load requirements (cargo type, origin, destination) against the registered carrier profiles to generate smart matching recommendations.
 
-## Local Development (Outside Docker)
-To run this service locally on your host machine:
+AI-powered load-to-carrier matching engine for the FreightMatch platform. Uses Claude 3.5 Haiku (via OpenRouter) to rank carriers against load requirements. Also exposes an AI chat assistant for logistics queries.
 
-1. Copy `.env.example` to `.env` and fill in the values (you will need a valid `ANTHROPIC_API_KEY`).
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-3. Start the development server:
-   ```bash
-   pnpm dev
-   ```
+- **Port:** 3004
+- **Database:** MongoDB (`freightmatch-matching`)
+- **Kafka:** Consumer — listens for `load.status.updated` to auto-trigger matching
+
+---
 
 ## Endpoints
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/match/:loadId` | Get AI recommendations for a specific load |
-| `POST` | `/api/match/recommend` | Manually trigger a recommendation generation |
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/api/match/:loadId` | — | Get cached carrier recommendations for a load |
+| `POST` | `/api/match/recommend` | — | Manually trigger AI recommendation generation |
+| `POST` | `/api/chat` | Bearer JWT | AI logistics chat assistant (rate-limit: 2 r/s) |
+| `GET` | `/health` | — | Service health check |
+| `GET` | `/metrics` | — | Prometheus metrics |
 
-## Required Environment Variables
+**Rate limits:** 2 r/s for `/api/chat` · 30 r/s general
 
-You must define the following variables in your `.env` file (refer to `.env.example`):
-- `PORT` (default: 3004)
-- `MONGODB_URI`
-- `ANTHROPIC_API_KEY` (Required for AI generation)
-- `KAFKA_BROKER`
+---
+
+## Environment Variables
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `PORT` | No | `3004` | Service port |
+| `MONGODB_URI` | Yes | — | MongoDB connection string |
+| `JWT_SECRET` | Yes | — | JWT access token signing secret |
+| `KAFKA_BROKER` | Yes | — | Kafka broker address (e.g. `kafka:9092`) |
+| `OPENROUTER_API_KEY` | Yes | — | OpenRouter API key for Claude 3.5 Haiku access |
+| `USER_SERVICE_URL` | Yes | — | User Service base URL to fetch carrier list |
+| `INTERNAL_SERVICE_SECRET` | Yes | — | Shared secret for internal service calls |
+| `CORS_ORIGIN` | No | `*` | Allowed CORS origins |
+
+---
+
+## Running Locally
+
+```bash
+# From the repo root
+pnpm --filter @freightmatch/matching-service dev
+```
+
+---
+
+## API Reference
+
+Full schemas, examples, and interactive "Try it" → **https://yigitbozyaka.github.io/freightmatch/**

@@ -90,7 +90,7 @@ export async function getProfile(): Promise<ProfileResponse> {
 }
 
 export async function updateCarrierProfile(
-  input: UpdateCarrierProfileInput
+  input: UpdateCarrierProfileInput,
 ): Promise<z.infer<typeof CarrierProfileResponseSchema>> {
   const data = await apiFetch<unknown>("api/users/carrier-profile", {
     method: "PATCH",
