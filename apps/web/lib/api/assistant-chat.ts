@@ -10,6 +10,7 @@ export type SendAssistantChatInput = {
 
 type SendAssistantChatOptions = {
   onDelta?: (delta: string, content: string) => void;
+  signal?: AbortSignal;
 };
 
 export class AssistantChatError extends Error {
@@ -33,6 +34,7 @@ export async function sendAssistantChatMessage(
       "Content-Type": "application/json",
     },
     body: JSON.stringify(input),
+    signal: options.signal,
   });
 
   if (!response.ok) {
@@ -52,6 +54,12 @@ export async function sendAssistantChatMessage(
   }
 
   return reply;
+}
+
+export function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) return error.name === "AbortError";
+  if (!isRecord(error)) return false;
+  return error.name === "AbortError";
 }
 
 async function readErrorMessage(response: Response): Promise<string> {

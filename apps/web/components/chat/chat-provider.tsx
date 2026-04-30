@@ -12,6 +12,7 @@ import {
 import { useToastQueue } from "@/components/primitives/ToastHost";
 import {
   AssistantChatError,
+  isAbortError,
   sendAssistantChatMessage,
   type AssistantConversationMessage,
 } from "@/lib/api/assistant-chat";
@@ -59,7 +60,28 @@ export function AssistantChatProvider({
   const [isSending, setIsSending] = useState(false);
   const messagesRef = useRef<AssistantChatMessage[]>([]);
   const sendingRef = useRef(false);
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
   const { dismissToast, pushToast, toasts } = useToastQueue(4500);
+
+  const abortActiveRequest = useCallback((updateState = true) => {
+    activeRequestRef.current?.abort();
+    activeRequestRef.current = null;
+    sendingRef.current = false;
+
+    if (updateState && mountedRef.current) {
+      setIsSending(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      abortActiveRequest(false);
+    };
+  }, [abortActiveRequest]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -73,6 +95,7 @@ export function AssistantChatProvider({
     if (isAuthLoading) return;
 
     if (!isAuthenticated) {
+      abortActiveRequest();
       clearAssistantChatSession();
       setMessages([]);
       setIsHydrated(true);
@@ -81,7 +104,7 @@ export function AssistantChatProvider({
 
     setMessages(readStoredMessages());
     setIsHydrated(true);
-  }, [isAuthenticated, isAuthLoading]);
+  }, [abortActiveRequest, isAuthenticated, isAuthLoading]);
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) return;
@@ -99,9 +122,10 @@ export function AssistantChatProvider({
   }, [isAuthenticated, isHydrated, messages]);
 
   const clearConversation = useCallback(() => {
+    abortActiveRequest();
     clearAssistantChatSession();
     setMessages([]);
-  }, []);
+  }, [abortActiveRequest]);
 
   const sendPrompt = useCallback(
     async (prompt: string) => {
@@ -125,10 +149,16 @@ export function AssistantChatProvider({
         status: "pending",
       };
       const conversationHistory = toConversationHistory(messagesRef.current);
+      const controller = new AbortController();
+
+      activeRequestRef.current = controller;
 
       sendingRef.current = true;
       setIsSending(true);
       setMessages((current) => [...current, userMessage, assistantMessage]);
+
+      const isCurrentRequest = () =>
+        mountedRef.current && activeRequestRef.current === controller && !controller.signal.aborted;
 
       try {
         let receivedStreamDelta = false;
@@ -139,11 +169,15 @@ export function AssistantChatProvider({
           },
           {
             onDelta: (_delta, content) => {
+              if (!isCurrentRequest()) return;
               receivedStreamDelta = true;
               replaceMessage(assistantId, { content, status: "streaming" });
             },
+            signal: controller.signal,
           },
         );
+
+        if (!isCurrentRequest()) return;
 
         replaceMessage(assistantId, {
           content:
@@ -152,6 +186,8 @@ export function AssistantChatProvider({
           status: "sent",
         });
       } catch (error) {
+        if (controller.signal.aborted || isAbortError(error) || !isCurrentRequest()) return;
+
         const status = error instanceof AssistantChatError ? error.status : null;
         const isRateLimited = status === 429;
 
@@ -169,8 +205,14 @@ export function AssistantChatProvider({
           status: "error",
         });
       } finally {
-        sendingRef.current = false;
-        setIsSending(false);
+        if (activeRequestRef.current === controller) {
+          activeRequestRef.current = null;
+          sendingRef.current = false;
+
+          if (mountedRef.current) {
+            setIsSending(false);
+          }
+        }
       }
     },
     [pushToast],
@@ -202,6 +244,8 @@ export function AssistantChatProvider({
   );
 
   function replaceMessage(id: string, patch: Pick<AssistantChatMessage, "content" | "status">) {
+    if (!mountedRef.current) return;
+
     setMessages((current) =>
       current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
     );
