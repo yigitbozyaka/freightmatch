@@ -129,7 +129,7 @@ function ShipperLoadsContent() {
       <header className="flex items-center justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-widest text-amber-400">Shipper / Loads</p>
-          <h1 className="text-2xl font-bold text-slate-100" style={{ fontFamily: 'var(--font-display)' }}>
+          <h1 className="text-2xl font-bold text-slate-100 font-display">
             My Loads
           </h1>
         </div>

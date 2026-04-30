@@ -48,15 +48,6 @@ export type ListAvailableParams = {
   cargoType?: string;
 };
 
-export type ListMyLoadsParams = {
-  status?: string[];
-  cargoType?: string;
-  minWeight?: number;
-  maxWeight?: number;
-  q?: string;
-  page?: number;
-  limit?: number;
-};
 
 export async function createLoad(input: CreateLoadInput): Promise<Load> {
   const data = await apiFetch<unknown>("api/loads", {
@@ -71,18 +62,8 @@ export async function list(): Promise<Load[]> {
   return z.array(LoadSchema).parse(data);
 }
 
-export async function listMyLoads(params?: ListMyLoadsParams): Promise<Load[]> {
-  const query = new URLSearchParams();
-  if (params?.status && params.status.length > 0) query.set("status", params.status.join(","));
-  if (params?.cargoType) query.set("cargoType", params.cargoType);
-  if (typeof params?.minWeight === "number") query.set("minWeight", String(params.minWeight));
-  if (typeof params?.maxWeight === "number") query.set("maxWeight", String(params.maxWeight));
-  if (params?.q) query.set("q", params.q);
-  if (typeof params?.page === "number") query.set("page", String(params.page));
-  if (typeof params?.limit === "number") query.set("limit", String(params.limit));
-
-  const qs = query.size > 0 ? `?${query.toString()}` : "";
-  const data = await apiFetch<unknown>(`api/loads/my-loads${qs}`);
+export async function listMyLoads(): Promise<Load[]> {
+  const data = await apiFetch<unknown>("api/loads/my-loads");
   return z.array(LoadSchema).parse(data);
 }
 
