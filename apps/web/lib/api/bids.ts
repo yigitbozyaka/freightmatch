@@ -10,6 +10,8 @@ const BidSchema = z.object({
   priceUSD: z.number(),
   estimatedDeliveryHours: z.number(),
   status: BidStatusSchema,
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 export type Bid = z.infer<typeof BidSchema>;

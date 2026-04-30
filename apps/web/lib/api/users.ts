@@ -10,12 +10,18 @@ const UserSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
+const TruckTypeSchema = z.enum(["flatbed", "refrigerated", "dry-van", "tanker"]);
+
 const CarrierProfileSchema = z.object({
-  truckType: z.enum(["flatbed", "refrigerated", "dry-van", "tanker"]),
-  capacityKg: z.number(),
-  homeCity: z.string(),
+  truckType: TruckTypeSchema.optional(),
+  capacityKg: z.number().optional(),
+  homeCity: z.string().optional(),
   rating: z.number().optional(),
   completedShipments: z.number().optional(),
+  profilePhotoUrl: z.string().nullable().optional(),
+  avgEtaHours: z.number().optional(),
+  trustScore: z.number().optional(),
+  bio: z.string().nullable().optional(),
 });
 
 const RegisterResponseSchema = z.object({
@@ -30,11 +36,11 @@ const LoginResponseSchema = z.object({
 });
 
 const ProfileResponseSchema = UserSchema.extend({
-  carrierProfile: CarrierProfileSchema.optional(),
+  carrierProfile: CarrierProfileSchema.nullable().optional(),
 });
 
 const CarrierProfileResponseSchema = UserSchema.extend({
-  carrierProfile: CarrierProfileSchema,
+  carrierProfile: CarrierProfileSchema.nullable(),
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -55,9 +61,11 @@ export type LoginInput = {
 };
 
 export type UpdateCarrierProfileInput = {
-  truckType?: "flatbed" | "refrigerated" | "dry-van" | "tanker";
+  truckType?: z.infer<typeof TruckTypeSchema>;
   capacityKg?: number;
   homeCity?: string;
+  profilePhotoUrl?: string | null;
+  bio?: string | null;
 };
 
 export async function register(input: RegisterInput): Promise<RegisterResponse> {
