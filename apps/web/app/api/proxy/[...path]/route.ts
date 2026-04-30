@@ -31,6 +31,19 @@ function refreshOpts() {
 
 const isProd = () => process.env.NODE_ENV === "production";
 
+function forwardedHeaders(upstream: Response) {
+  const headers = new Headers(upstream.headers);
+  headers.delete("connection");
+  headers.delete("keep-alive");
+  headers.delete("proxy-authenticate");
+  headers.delete("proxy-authorization");
+  headers.delete("te");
+  headers.delete("trailer");
+  headers.delete("transfer-encoding");
+  headers.delete("upgrade");
+  return headers;
+}
+
 async function attemptRefresh(
   cookieStore: Awaited<ReturnType<typeof cookies>>,
 ): Promise<string | null> {
@@ -110,12 +123,14 @@ async function proxyRequest(req: NextRequest, ctx: RouteContext): Promise<NextRe
 
   const contentType = upstream.headers.get("Content-Type") ?? "application/json";
   if (contentType.includes("text/event-stream")) {
+    const responseHeaders = forwardedHeaders(upstream);
+    if (!responseHeaders.has("Cache-Control")) {
+      responseHeaders.set("Cache-Control", "no-cache, no-transform");
+    }
+
     return new NextResponse(upstream.body, {
       status: upstream.status,
-      headers: {
-        "Cache-Control": "no-cache, no-transform",
-        "Content-Type": contentType,
-      },
+      headers: responseHeaders,
     });
   }
 
