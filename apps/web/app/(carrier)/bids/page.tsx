@@ -138,13 +138,15 @@ export default function CarrierBidsPage() {
             {
               key: 'loadId',
               header: 'Load Title',
-              sortable: false, // rendered value is getTitleLabel(), not loadId — sort would be misleading
+              sortable: true,
+              sortKey: (row) => getTitleLabel(row),
               render: (row) => getTitleLabel(row),
             },
             {
               key: 'load',
               header: 'Route',
-              sortable: false, // rendered value is a composite string; load is an object, not sortable
+              sortable: true,
+              sortKey: (row) => getRouteLabel(row),
               render: (row) => getRouteLabel(row),
             },
             {
@@ -165,6 +167,7 @@ export default function CarrierBidsPage() {
               key: 'submittedAt',
               header: 'Submitted',
               sortable: true,
+              sortKey: (row) => getLatestActivityAt(row),
               render: (row) => formatSubmittedAt(row.submittedAt),
             },
             {
