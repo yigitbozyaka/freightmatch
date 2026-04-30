@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { AssistantChatRoot } from "@/components/chat/chat-root";
+import { clearAssistantChatSession } from "@/components/chat/chat-provider";
 import type { User } from "@/lib/api/users";
 import { logout as apiLogout, getProfile } from "@/lib/api/users";
 
@@ -48,9 +50,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!isLoading && !user) clearAssistantChatSession();
+  }, [isLoading, user]);
+
   const logout = useCallback(async () => {
     await apiLogout().catch(() => {});
     queryClient.clear();
+    clearAssistantChatSession();
     setUser(null);
     router.push("/");
   }, [queryClient, router]);
@@ -58,7 +65,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthContext.Provider value={{ user, setUser, isLoading, logout }}>
-        {children}
+        <AssistantChatRoot isAuthenticated={Boolean(user)} isAuthLoading={isLoading}>
+          {children}
+        </AssistantChatRoot>
       </AuthContext.Provider>
     </QueryClientProvider>
   );

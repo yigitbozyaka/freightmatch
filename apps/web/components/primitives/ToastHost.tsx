@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/ui/cn";
 
 type ToastVariant = "info" | "error";
 
@@ -46,14 +47,16 @@ export function useToastQueue(autoDismissMs = 4000) {
 }
 
 export function ToastHost({
+  className,
   toasts,
   onDismiss,
 }: {
+  className?: string;
   toasts: ToastItem[];
   onDismiss: (id: number) => void;
 }) {
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex w-[320px] flex-col gap-2">
+    <div className={cn("fixed bottom-4 right-4 z-50 flex w-[320px] flex-col gap-2", className)}>
       {toasts.map((toast) => {
         const accent =
           toast.variant === "error" ? "border-[--color-danger]" : "border-[--color-amber-400]";

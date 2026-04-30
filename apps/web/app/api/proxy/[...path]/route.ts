@@ -108,8 +108,18 @@ async function proxyRequest(req: NextRequest, ctx: RouteContext): Promise<NextRe
     return response;
   }
 
-  const responseBody = await upstream.text();
   const contentType = upstream.headers.get("Content-Type") ?? "application/json";
+  if (contentType.includes("text/event-stream")) {
+    return new NextResponse(upstream.body, {
+      status: upstream.status,
+      headers: {
+        "Cache-Control": "no-cache, no-transform",
+        "Content-Type": contentType,
+      },
+    });
+  }
+
+  const responseBody = await upstream.text();
   return new NextResponse(responseBody || null, {
     status: upstream.status,
     headers: { "Content-Type": contentType },
