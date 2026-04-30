@@ -1,0 +1,561 @@
+openapi: 3.1.0
+
+info:
+  title: Load Service
+  version: 0.1.0
+  description: |
+    Manages freight load lifecycle for the FreightMatch platform.
+    Shippers create and manage loads; carriers browse available (Posted) loads.
+    Load status transitions follow: Draft → Posted → Matched → InTransit → Delivered (or Cancelled).
+  contact:
+    name: FreightMatch
+    url: https://github.com/yigitbozyaka/freightmatch
+
+servers:
+  - url: http://localhost:3002
+    description: Local development
+  - url: /
+    description: Production (via NGINX gateway on port 80)
+
+tags:
+  - name: Loads
+    description: Freight load CRUD and status management
+  - name: Observability
+    description: Health and metrics endpoints
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from the User Service `/api/users/login`
+    internalSecret:
+      type: apiKey
+      in: header
+      name: x-internal-secret
+      description: Shared secret for internal service-to-service calls
+
+  schemas:
+    LoadStatus:
+      type: string
+      enum: [Draft, Posted, Matched, InTransit, Delivered, Cancelled]
+      example: Draft
+
+    Load:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "665b2c3d4e5f67890123abcd"
+        title:
+          type: string
+          example: "Refrigerated Dairy Products - Istanbul to Ankara"
+        origin:
+          type: string
+          example: Istanbul
+        destination:
+          type: string
+          example: Ankara
+        cargoType:
+          type: string
+          example: "Perishable Goods"
+        weightKg:
+          type: number
+          example: 12000
+        deadlineHours:
+          type: integer
+          example: 24
+        status:
+          $ref: '#/components/schemas/LoadStatus'
+        shipperId:
+          type: string
+          example: "665a1b2c3d4e5f6789012345"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-03-09T10:00:00.000Z"
+        statusHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              from:
+                type: string
+                nullable: true
+              to:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+      required: [id, title, origin, destination, cargoType, weightKg, deadlineHours, status, shipperId, createdAt]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: Invalid or expired token
+        timestamp:
+          type: string
+          format: date-time
+      required: [error, message]
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: UNAUTHORIZED
+            message: Invalid or expired token
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    Forbidden:
+      description: Authenticated but insufficient role or not the resource owner
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: FORBIDDEN
+            message: You do not have permission to perform this action
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    NotFound:
+      description: Load not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: NOT_FOUND
+            message: Load not found
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    ValidationError:
+      description: Request body or query failed schema validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: VALIDATION_ERROR
+            message: "weightKg: Capacity must be a positive number"
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    RateLimited:
+      description: Too many requests — rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: RATE_LIMITED
+            message: Too many requests, please try again later
+
+paths:
+  /api/loads:
+    post:
+      tags: [Loads]
+      operationId: createLoad
+      summary: Create a load
+      description: |
+        Create a new freight load. The load is created in **Draft** status.
+        **Shipper role required.**
+
+        **Rate limit:** 30 requests/second (general).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Refrigerated Dairy Products - Istanbul to Ankara"
+                origin:
+                  type: string
+                  example: Istanbul
+                destination:
+                  type: string
+                  example: Ankara
+                cargoType:
+                  type: string
+                  example: "Perishable Goods"
+                weightKg:
+                  type: number
+                  minimum: 0
+                  example: 12000
+                deadlineHours:
+                  type: integer
+                  minimum: 1
+                  example: 24
+              required: [title, origin, destination, cargoType, weightKg, deadlineHours]
+            example:
+              title: "Refrigerated Dairy Products - Istanbul to Ankara"
+              origin: Istanbul
+              destination: Ankara
+              cargoType: "Perishable Goods"
+              weightKg: 12000
+              deadlineHours: 24
+      responses:
+        '201':
+          description: Load created (status = Draft)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Load'
+              example:
+                id: "665b2c3d4e5f67890123abcd"
+                shipperId: "665a1b2c3d4e5f6789012345"
+                title: "Refrigerated Dairy Products - Istanbul to Ankara"
+                origin: Istanbul
+                destination: Ankara
+                cargoType: "Perishable Goods"
+                weightKg: 12000
+                deadlineHours: 24
+                status: Draft
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/loads/available:
+    get:
+      tags: [Loads]
+      operationId: getAvailableLoads
+      summary: List available loads
+      description: |
+        Returns all loads with status `Posted`. Results can be filtered by origin, destination, and cargoType.
+        **Carrier role required.**
+
+        **Rate limit:** 30 requests/second (general).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: origin
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Istanbul
+          description: Filter by origin city (case-insensitive)
+        - name: destination
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Ankara
+          description: Filter by destination city (case-insensitive)
+        - name: cargoType
+          in: query
+          required: false
+          schema:
+            type: string
+          example: "Perishable Goods"
+          description: Filter by cargo type (case-insensitive)
+      responses:
+        '200':
+          description: Array of available loads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Load'
+              example:
+                - id: "665b2c3d4e5f67890123abcd"
+                  title: "Refrigerated Dairy Products - Istanbul to Ankara"
+                  origin: Istanbul
+                  destination: Ankara
+                  cargoType: "Perishable Goods"
+                  weightKg: 12000
+                  deadlineHours: 24
+                  status: Posted
+                  shipperId: "665a1b2c3d4e5f6789012345"
+                  createdAt: "2026-03-09T10:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/loads/my-loads:
+    get:
+      tags: [Loads]
+      operationId: getMyLoads
+      summary: Get shipper's own loads
+      description: |
+        Returns all loads created by the authenticated shipper across all statuses.
+        **Shipper role required.**
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Array of loads owned by the shipper
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Load'
+              example:
+                - id: "665b2c3d4e5f67890123abcd"
+                  title: "Refrigerated Dairy Products - Istanbul to Ankara"
+                  origin: Istanbul
+                  destination: Ankara
+                  status: Posted
+                  shipperId: "665a1b2c3d4e5f6789012345"
+                  createdAt: "2026-03-09T10:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/loads/{id}:
+    get:
+      tags: [Loads]
+      operationId: getLoadById
+      summary: Get load by ID
+      description: |
+        Returns a single load by its ID.
+        Accepts either a JWT bearer token (any authenticated user) **or** an internal service secret.
+      security:
+        - bearerAuth: []
+        - internalSecret: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665b2c3d4e5f67890123abcd"
+      responses:
+        '200':
+          description: Load details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Load'
+              example:
+                id: "665b2c3d4e5f67890123abcd"
+                shipperId: "665a1b2c3d4e5f6789012345"
+                title: "Refrigerated Dairy Products - Istanbul to Ankara"
+                origin: Istanbul
+                destination: Ankara
+                cargoType: "Perishable Goods"
+                weightKg: 12000
+                deadlineHours: 24
+                status: Draft
+                createdAt: "2026-03-09T10:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+    patch:
+      tags: [Loads]
+      operationId: updateLoad
+      summary: Update a load
+      description: |
+        Partial update of a load's fields (title, origin, destination, cargoType, weightKg, deadlineHours).
+        **Shipper role required. Must be the owner of the load.**
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665b2c3d4e5f67890123abcd"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                origin:
+                  type: string
+                destination:
+                  type: string
+                cargoType:
+                  type: string
+                weightKg:
+                  type: number
+                deadlineHours:
+                  type: integer
+            example:
+              title: "Updated - Refrigerated Dairy Products Istanbul to Izmir"
+              destination: Izmir
+              weightKg: 15000
+      responses:
+        '200':
+          description: Updated load
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Load'
+              example:
+                id: "665b2c3d4e5f67890123abcd"
+                title: "Updated - Refrigerated Dairy Products Istanbul to Izmir"
+                destination: Izmir
+                weightKg: 15000
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+    delete:
+      tags: [Loads]
+      operationId: deleteLoad
+      summary: Delete a load
+      description: |
+        Permanently delete a load.
+        **Shipper role required. Must be the owner of the load.**
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665b2c3d4e5f67890123abcd"
+      responses:
+        '204':
+          description: Load deleted — no content returned
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/loads/{id}/status:
+    patch:
+      tags: [Loads]
+      operationId: updateLoadStatus
+      summary: Update load status
+      description: |
+        Transition a load's status.
+        **Shipper role required. Must be the owner of the load.**
+
+        Valid transitions: `Draft → Posted → Matched → InTransit → Delivered`
+        Also allowed: any status → `Cancelled`
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665b2c3d4e5f67890123abcd"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/LoadStatus'
+              required: [status]
+            example:
+              status: Posted
+      responses:
+        '200':
+          description: Load with updated status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Load'
+              example:
+                id: "665b2c3d4e5f67890123abcd"
+                status: Posted
+                statusHistory:
+                  - from: null
+                    to: Draft
+                    timestamp: "2026-03-09T10:00:00.000Z"
+                  - from: Draft
+                    to: Posted
+                    timestamp: "2026-03-09T10:05:00.000Z"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /health:
+    get:
+      tags: [Observability]
+      operationId: healthCheck
+      summary: Health check
+      security: []
+      description: Returns service health status including MongoDB and Kafka connectivity.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              example:
+                status: ok
+                service: load-service
+                version: "1.0.0"
+                timestamp: "2026-03-09T10:00:00.000Z"
+                checks:
+                  mongodb: ok
+        '503':
+          description: Service is degraded
+
+  /metrics:
+    get:
+      tags: [Observability]
+      operationId: metrics
+      summary: Prometheus metrics
+      security: []
+      description: Exposes Prometheus-compatible metrics for HTTP request durations and counts.
+      responses:
+        '200':
+          description: Prometheus text format
+          content:
+            text/plain:
+              example: |
+                # HELP http_request_duration_seconds HTTP request duration in seconds
+                # TYPE http_request_duration_seconds histogram
+                http_request_duration_seconds_bucket{method="POST",route="/api/loads",status_code="201",le="0.1"} 3

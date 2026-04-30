@@ -1,0 +1,594 @@
+openapi: 3.1.0
+
+info:
+  title: User Service
+  version: 0.1.0
+  description: |
+    Handles user registration, JWT authentication, token refresh/logout,
+    profile retrieval, carrier-profile management, and internal carrier lookups
+    for the FreightMatch platform.
+  contact:
+    name: FreightMatch
+    url: https://github.com/yigitbozyaka/freightmatch
+
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: /
+    description: Production (via NGINX gateway on port 80)
+
+tags:
+  - name: Auth
+    description: Registration, login, token refresh, and logout
+  - name: Users
+    description: User profile endpoints
+  - name: Carriers (internal)
+    description: Internal service-to-service carrier lookup endpoints
+  - name: Observability
+    description: Health and metrics endpoints
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from `/api/users/login` or `/api/users/refresh`
+    internalSecret:
+      type: apiKey
+      in: header
+      name: x-internal-secret
+      description: Shared secret for internal service-to-service calls (`INTERNAL_SERVICE_SECRET` env var)
+
+  schemas:
+    CarrierProfile:
+      type: object
+      properties:
+        truckType:
+          type: string
+          enum: [flatbed, refrigerated, dry-van, tanker]
+        capacityKg:
+          type: number
+          example: 18000
+        homeCity:
+          type: string
+          example: Istanbul
+        rating:
+          type: number
+          example: 0
+        completedShipments:
+          type: integer
+          example: 0
+      required: [truckType, capacityKg, homeCity]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "665a1b2c3d4e5f6789012345"
+        email:
+          type: string
+          format: email
+          example: shipper@freightmatch.com
+        role:
+          type: string
+          enum: [Shipper, Carrier]
+          example: Shipper
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-03-09T10:00:00.000Z"
+        carrierProfile:
+          $ref: '#/components/schemas/CarrierProfile'
+      required: [id, email, role, createdAt]
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "665a1b2c3d4e5f6789012345"
+            email:
+              type: string
+              example: shipper@freightmatch.com
+            role:
+              type: string
+              enum: [Shipper, Carrier]
+      required: [accessToken, refreshToken, user]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: Invalid or expired token
+        timestamp:
+          type: string
+          format: date-time
+      required: [error, message]
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: UNAUTHORIZED
+            message: Invalid or expired token
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    Forbidden:
+      description: Authenticated but insufficient role/permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: FORBIDDEN
+            message: You do not have permission to perform this action
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: NOT_FOUND
+            message: User not found
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    ValidationError:
+      description: Request body failed schema validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: VALIDATION_ERROR
+            message: "email: Invalid email format"
+            timestamp: "2026-03-09T10:00:00.000Z"
+
+    RateLimited:
+      description: Too many requests — rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: RATE_LIMITED
+            message: Too many requests, please try again later
+
+paths:
+  /api/users/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Register a new user
+      security: []
+      description: |
+        Create a new Shipper or Carrier account.
+
+        **Rate limit:** 5 requests/second per IP.
+
+        Password requirements: ≥8 chars, at least one uppercase, lowercase, number, and special character.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: shipper@freightmatch.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: "Shipper123!"
+                role:
+                  type: string
+                  enum: [Shipper, Carrier]
+                  example: Shipper
+              required: [email, password, role]
+            examples:
+              Shipper:
+                summary: Register as Shipper
+                value:
+                  email: shipper@freightmatch.com
+                  password: "Shipper123!"
+                  role: Shipper
+              Carrier:
+                summary: Register as Carrier
+                value:
+                  email: carrier@freightmatch.com
+                  password: "Carrier123!"
+                  role: Carrier
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: "665a1b2c3d4e5f6789012345"
+                email: shipper@freightmatch.com
+                role: Shipper
+                createdAt: "2026-03-09T10:00:00.000Z"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/users/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Authenticate user
+      security: []
+      description: |
+        Authenticate with email and password. Returns JWT access and refresh tokens.
+
+        **Rate limit:** 5 requests/second per IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: shipper@freightmatch.com
+                password:
+                  type: string
+                  example: "Shipper123!"
+              required: [email, password]
+            examples:
+              Shipper:
+                summary: Login as Shipper
+                value:
+                  email: shipper@freightmatch.com
+                  password: "Shipper123!"
+              Carrier:
+                summary: Login as Carrier
+                value:
+                  email: carrier@freightmatch.com
+                  password: "Carrier123!"
+      responses:
+        '200':
+          description: Login successful — returns access and refresh tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+              example:
+                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                user:
+                  id: "665a1b2c3d4e5f6789012345"
+                  email: shipper@freightmatch.com
+                  role: Shipper
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/users/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshToken
+      summary: Refresh access token
+      security: []
+      description: |
+        Exchange a valid refresh token for a new access token.
+
+        **Rate limit:** 5 requests/second per IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              required: [refreshToken]
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/users/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Logout (revoke refresh token)
+      description: |
+        Invalidates the provided refresh token. Requires a valid JWT access token.
+        The `refreshToken` body field is optional — omitting it only clears the server-side session.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users/profile:
+    get:
+      tags: [Users]
+      operationId: getProfile
+      summary: Get own profile
+      description: Returns the authenticated user's profile, including `carrierProfile` if the user is a Carrier.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: "665a1b2c3d4e5f6789012345"
+                email: shipper@freightmatch.com
+                role: Shipper
+                createdAt: "2026-03-09T10:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users/{id}:
+    get:
+      tags: [Users]
+      operationId: getUserById
+      summary: Get user by ID
+      description: Returns a user's public profile by their ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665a1b2c3d4e5f6789012346"
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: "665a1b2c3d4e5f6789012346"
+                email: carrier@freightmatch.com
+                role: Carrier
+                createdAt: "2026-03-09T10:01:00.000Z"
+                carrierProfile:
+                  truckType: refrigerated
+                  capacityKg: 18000
+                  homeCity: Istanbul
+                  rating: 0
+                  completedShipments: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/users/carrier-profile:
+    patch:
+      tags: [Users]
+      operationId: updateCarrierProfile
+      summary: Update carrier profile
+      description: |
+        Update the authenticated carrier's profile (truck type, capacity, home city).
+        **Carrier role required.**
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CarrierProfile'
+            example:
+              truckType: refrigerated
+              capacityKg: 18000
+              homeCity: Istanbul
+      responses:
+        '200':
+          description: Updated carrier profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: "665a1b2c3d4e5f6789012346"
+                email: carrier@freightmatch.com
+                role: Carrier
+                carrierProfile:
+                  truckType: refrigerated
+                  capacityKg: 18000
+                  homeCity: Istanbul
+                  rating: 0
+                  completedShipments: 0
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/users/carriers:
+    get:
+      tags: [Carriers (internal)]
+      operationId: getAllCarriers
+      summary: List all carriers (internal)
+      description: |
+        Returns a list of all registered carriers with their carrier profiles.
+        **Internal service-to-service endpoint** — requires `x-internal-secret` header.
+        Not exposed through the public NGINX gateway.
+      security:
+        - internalSecret: []
+      responses:
+        '200':
+          description: Array of carrier users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+              example:
+                - id: "665a1b2c3d4e5f6789012346"
+                  email: carrier@freightmatch.com
+                  role: Carrier
+                  createdAt: "2026-03-09T10:01:00.000Z"
+                  carrierProfile:
+                    truckType: refrigerated
+                    capacityKg: 18000
+                    homeCity: Istanbul
+                    rating: 0
+                    completedShipments: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users/carriers/{id}:
+    get:
+      tags: [Carriers (internal)]
+      operationId: getCarrierById
+      summary: Get carrier by ID (internal)
+      description: |
+        Returns a single carrier by their user ID.
+        **Internal service-to-service endpoint** — requires `x-internal-secret` header.
+      security:
+        - internalSecret: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "665a1b2c3d4e5f6789012346"
+      responses:
+        '200':
+          description: Carrier user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: "665a1b2c3d4e5f6789012346"
+                email: carrier@freightmatch.com
+                role: Carrier
+                createdAt: "2026-03-09T10:01:00.000Z"
+                carrierProfile:
+                  truckType: refrigerated
+                  capacityKg: 18000
+                  homeCity: Istanbul
+                  rating: 0
+                  completedShipments: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /health:
+    get:
+      tags: [Observability]
+      operationId: healthCheck
+      summary: Health check
+      security: []
+      description: Returns service health status including MongoDB connectivity.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              example:
+                status: ok
+                service: user-service
+                version: "1.0.0"
+                timestamp: "2026-03-09T10:00:00.000Z"
+                checks:
+                  mongodb: ok
+        '503':
+          description: Service is degraded or unhealthy
+          content:
+            application/json:
+              example:
+                status: degraded
+                service: user-service
+                checks:
+                  mongodb: error
+
+  /metrics:
+    get:
+      tags: [Observability]
+      operationId: metrics
+      summary: Prometheus metrics
+      security: []
+      description: Exposes Prometheus-compatible metrics (HTTP request durations, request counts, MongoDB connection status).
+      responses:
+        '200':
+          description: Prometheus text format metrics
+          content:
+            text/plain:
+              example: |
+                # HELP http_request_duration_seconds HTTP request duration in seconds
+                # TYPE http_request_duration_seconds histogram
+                http_request_duration_seconds_bucket{method="POST",route="/api/users/login",status_code="200",le="0.1"} 5
