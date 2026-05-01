@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { apiFetch } from "./client";
 
-const LoadStatusSchema = z.enum(["Draft", "Posted", "Matched", "InTransit", "Delivered"]);
+const LoadStatusSchema = z.enum([
+  "Draft",
+  "Posted",
+  "Matched",
+  "InTransit",
+  "Delivered",
+  "Cancelled",
+]);
 
 const LoadSchema = z.object({
   _id: z.string(),
@@ -16,11 +23,14 @@ const LoadSchema = z.object({
   statusHistory: z
     .array(
       z.object({
-        from: z.string().nullable(),
-        to: z.string(),
+        from: LoadStatusSchema.nullable(),
+        to: LoadStatusSchema,
+        timestamp: z.string().optional(),
       }),
     )
     .optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 export type Load = z.infer<typeof LoadSchema>;

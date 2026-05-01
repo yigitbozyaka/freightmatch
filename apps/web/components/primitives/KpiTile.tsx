@@ -10,10 +10,20 @@ type KpiTileProps = {
   value: number;
   trend?: Trend;
   currency?: string;
+  maximumFractionDigits?: number;
+  minimumFractionDigits?: number;
   unit?: string;
 };
 
-export function KpiTile({ label, value, trend, currency, unit }: KpiTileProps) {
+export function KpiTile({
+  label,
+  value,
+  trend,
+  currency,
+  maximumFractionDigits,
+  minimumFractionDigits,
+  unit,
+}: KpiTileProps) {
   const trendClass = trend?.direction === "up" ? "text-[--color-go]" : "text-[--color-danger]";
 
   return (
@@ -23,6 +33,8 @@ export function KpiTile({ label, value, trend, currency, unit }: KpiTileProps) {
         <MonoNum
           value={value}
           currency={currency}
+          maximumFractionDigits={maximumFractionDigits}
+          minimumFractionDigits={minimumFractionDigits}
           unit={unit}
           className="text-3xl font-black text-slate-100"
         />
