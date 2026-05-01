@@ -22,7 +22,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     let message = text;
     try {
       const json = JSON.parse(text) as { error?: string; message?: string };
-      message = json.error ?? json.message ?? text;
+      message = json.message ?? json.error ?? text;
     } catch {
       // use raw text
     }
