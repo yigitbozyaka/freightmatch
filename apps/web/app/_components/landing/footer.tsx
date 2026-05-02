@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { Grain } from "./grain";
 
-const ASCII = String.raw`
- ███████ ███    ███
- ██      ████  ████    FREIGHTMATCH
- █████   ██ ████ ██    OPS CONSOLE
- ██      ██  ██  ██    v0.1.0
- ██      ██      ██
-`;
+const ASCII = `┌─────────────────────────────┐
+│  ▚▚  FREIGHTMATCH           │
+│  ▚▚  OPS CONSOLE            │
+│  ▚▚  v0.1.0 · all systems   │
+└─────────────────────────────┘`;
 
 export function LandingFooter() {
   return (
