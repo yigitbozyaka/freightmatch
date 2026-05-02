@@ -237,8 +237,8 @@ function CorridorMap() {
                 strokeWidth={1.4}
               />
               <text
+                className="font-mono"
                 fill="#94a3b8"
-                fontFamily="var(--font-mono)"
                 fontSize={10}
                 letterSpacing={1.2}
                 x={city.x + 8}

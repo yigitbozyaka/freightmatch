@@ -129,14 +129,7 @@ function AiIllustration() {
           </line>
         ))}
       </g>
-      <text
-        fill="#475569"
-        fontFamily="var(--font-mono)"
-        fontSize={9}
-        letterSpacing={1.4}
-        x={20}
-        y={94}
-      >
+      <text fill="#475569" className="font-mono" fontSize={9} letterSpacing={1.4} x={20} y={94}>
         score · price · eta · trust
       </text>
     </svg>
@@ -179,7 +172,7 @@ function BiddingIllustration() {
               values={`${120 - i * 25};${130 - i * 30};${120 - i * 25}`}
             />
           </rect>
-          <text fill="#cbd5e1" fontFamily="var(--font-mono)" fontSize={8} x={26} y={28 + i * 22}>
+          <text fill="#cbd5e1" className="font-mono" fontSize={8} x={26} y={28 + i * 22}>
             €{(2400 - i * 180).toLocaleString()}
           </text>
         </g>
@@ -205,14 +198,7 @@ function TrustIllustration() {
           transform={`translate(${30 + i * 32}, 50)`}
         />
       ))}
-      <text
-        fill="#94a3b8"
-        fontFamily="var(--font-mono)"
-        fontSize={11}
-        letterSpacing={1.5}
-        x={30}
-        y={88}
-      >
+      <text fill="#94a3b8" className="font-mono" fontSize={11} letterSpacing={1.5} x={30} y={88}>
         4.0 / 5.0
       </text>
     </svg>
@@ -247,19 +233,12 @@ function EtaIllustration() {
           values="40 213; 160 213; 40 213"
         />
       </circle>
-      <text
-        fill="#f5b342"
-        fontFamily="var(--font-mono)"
-        fontSize={14}
-        textAnchor="middle"
-        x={100}
-        y={48}
-      >
+      <text fill="#f5b342" className="font-mono" fontSize={14} textAnchor="middle" x={100} y={48}>
         14h
       </text>
       <text
         fill="#64748b"
-        fontFamily="var(--font-mono)"
+        className="font-mono"
         fontSize={8}
         letterSpacing={1.3}
         textAnchor="middle"
@@ -282,7 +261,7 @@ function ChatIllustration() {
       viewBox="0 0 200 100"
     >
       <rect fill="#1c2430" height={20} rx={4} stroke="#2a3441" width={130} x={20} y={20} />
-      <text fill="#cbd5e1" fontFamily="var(--font-mono)" fontSize={9} x={28} y={33}>
+      <text fill="#cbd5e1" className="font-mono" fontSize={9} x={28} y={33}>
         loads near berlin
       </text>
       <rect
@@ -296,7 +275,7 @@ function ChatIllustration() {
         x={30}
         y={56}
       />
-      <text fill="#f5b342" fontFamily="var(--font-mono)" fontSize={9} x={38} y={69}>
+      <text fill="#f5b342" className="font-mono" fontSize={9} x={38} y={69}>
         7 active · sorted by score
       </text>
       <circle cx={184} cy={66} fill="#f5b342" r={2}>
@@ -315,7 +294,7 @@ function ApiIllustration() {
       preserveAspectRatio="xMidYMid meet"
       viewBox="0 0 320 100"
     >
-      <g fontFamily="var(--font-mono)" fontSize={10}>
+      <g className="font-mono" fontSize={10}>
         <text fill="#3dd68c" x={20} y={26}>
           POST
         </text>
