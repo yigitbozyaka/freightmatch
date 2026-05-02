@@ -107,6 +107,11 @@ export async function getProfile(): Promise<ProfileResponse> {
   return ProfileResponseSchema.parse(data);
 }
 
+export async function getUserById(id: string): Promise<ProfileResponse> {
+  const data = await apiFetch<unknown>(`api/users/${id}`);
+  return ProfileResponseSchema.parse(data);
+}
+
 export async function updateCarrierProfile(
   input: UpdateCarrierProfileInput,
 ): Promise<z.infer<typeof CarrierProfileResponseSchema>> {
