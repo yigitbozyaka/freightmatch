@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Button } from "@/components/primitives/button";
+import { useAuth } from "@/lib/hooks/useAuth";
 import { Grain } from "./grain";
 
 type City = { id: string; name: string; x: number; y: number };
@@ -44,6 +45,9 @@ function cityById(id: string): City {
 }
 
 export function Hero() {
+  const { user, isLoading: authLoading } = useAuth();
+  const dashboardHref = user?.role === "Carrier" ? "/carrier/dashboard" : "/shipper/dashboard";
+
   const counterRef = React.useRef<HTMLDivElement | null>(null);
   const [counters, setCounters] = React.useState({ loads: 0, corridors: 0, bids: 0 });
   const [started, setStarted] = React.useState(false);
@@ -98,16 +102,33 @@ export function Hero() {
           <span className="font-mono text-[11px] tracking-[0.32em] text-amber-400 uppercase">
             {"// FM-OPS v0.1"}
           </span>
-          <nav className="flex items-center gap-3 font-mono text-[11px] tracking-[0.28em] uppercase">
-            <Link className="text-slate-400 transition-colors hover:text-slate-100" href="/login">
-              Sign&nbsp;In
-            </Link>
-            <Link
-              className="rounded-md border border-amber-400/60 bg-amber-400/10 px-3 py-1.5 text-amber-300 transition-colors hover:border-amber-400 hover:bg-amber-400/20"
-              href="/register"
-            >
-              Create&nbsp;Account
-            </Link>
+          <nav
+            aria-busy={authLoading || undefined}
+            className="flex min-h-[34px] items-center gap-3 font-mono text-[11px] tracking-[0.28em] uppercase"
+          >
+            {authLoading ? null : user ? (
+              <Link
+                className="rounded-md border border-amber-400/60 bg-amber-400/10 px-3 py-1.5 text-amber-300 transition-colors hover:border-amber-400 hover:bg-amber-400/20"
+                href={dashboardHref}
+              >
+                Dashboard&nbsp;→
+              </Link>
+            ) : (
+              <>
+                <Link
+                  className="text-slate-400 transition-colors hover:text-slate-100"
+                  href="/login"
+                >
+                  Sign&nbsp;In
+                </Link>
+                <Link
+                  className="rounded-md border border-amber-400/60 bg-amber-400/10 px-3 py-1.5 text-amber-300 transition-colors hover:border-amber-400 hover:bg-amber-400/20"
+                  href="/register"
+                >
+                  Create&nbsp;Account
+                </Link>
+              </>
+            )}
           </nav>
         </div>
 
@@ -129,13 +150,21 @@ export function Hero() {
               AI-ranked carriers, live bidding, and trust scoring — purpose-built for the shippers
               and fleets that actually move Europe.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" variant="primary">
-                <Link href="/register">Create&nbsp;Account</Link>
-              </Button>
-              <Button asChild size="lg" variant="secondary">
-                <Link href="/login">Sign&nbsp;In</Link>
-              </Button>
+            <div className="flex min-h-[48px] flex-wrap items-center gap-3">
+              {authLoading ? null : user ? (
+                <Button asChild size="lg" variant="primary">
+                  <Link href={dashboardHref}>Open&nbsp;Dashboard&nbsp;→</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button asChild size="lg" variant="primary">
+                    <Link href="/register">Create&nbsp;Account</Link>
+                  </Button>
+                  <Button asChild size="lg" variant="secondary">
+                    <Link href="/login">Sign&nbsp;In</Link>
+                  </Button>
+                </>
+              )}
             </div>
             <div
               ref={counterRef}
