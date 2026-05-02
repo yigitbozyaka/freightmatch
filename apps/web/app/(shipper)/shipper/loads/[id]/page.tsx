@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Circle, Gauge, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Gauge, Sparkles, Star, XCircle } from "lucide-react";
 import { RouteMap } from "@/components/maps/RouteMap";
 import { Button } from "@/components/primitives/button";
 import { MonoNum } from "@/components/primitives/MonoNum";
@@ -424,7 +424,14 @@ function TimelineRow({
   state: "done" | "current" | "pending";
   isLast?: boolean;
 }) {
-  const Icon = state === "done" ? CheckCircle2 : state === "current" ? Gauge : Circle;
+  const Icon =
+    status === "Cancelled"
+      ? XCircle
+      : state === "done"
+        ? CheckCircle2
+        : state === "current"
+          ? Gauge
+          : Circle;
   const iconClass =
     status === "Cancelled"
       ? "text-[--color-danger]"
@@ -518,6 +525,7 @@ function BidList({
   }
 
   const canAccept = loadStatus === "Posted";
+  const acceptInFlight = acceptingBidId !== null;
 
   return (
     <ul className="space-y-2">
@@ -527,7 +535,7 @@ function BidList({
             bid={bid}
             carrier={bid.carrierId ? carriersById.get(bid.carrierId) : undefined}
             recommendation={bid.carrierId ? recommendationByCarrier.get(bid.carrierId) : undefined}
-            canAccept={canAccept}
+            canAccept={canAccept && !acceptInFlight}
             isAccepting={acceptingBidId === bid._id}
             onAccept={() => onAccept(bid._id)}
           />
