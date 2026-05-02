@@ -35,8 +35,17 @@ const LoginResponseSchema = z.object({
   user: UserSchema,
 });
 
+const ShipperProfileSchema = z.object({
+  companyName: z.string().nullable().optional(),
+  profilePhotoUrl: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+  completedLoads: z.number().optional(),
+  avgTimeToAcceptHours: z.number().optional(),
+});
+
 const ProfileResponseSchema = UserSchema.extend({
   carrierProfile: CarrierProfileSchema.nullable().optional(),
+  shipperProfile: ShipperProfileSchema.nullable().optional(),
 });
 
 const CarrierProfileResponseSchema = UserSchema.extend({
@@ -45,6 +54,7 @@ const CarrierProfileResponseSchema = UserSchema.extend({
 
 export type User = z.infer<typeof UserSchema>;
 export type CarrierProfile = z.infer<typeof CarrierProfileSchema>;
+export type ShipperProfile = z.infer<typeof ShipperProfileSchema>;
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;
