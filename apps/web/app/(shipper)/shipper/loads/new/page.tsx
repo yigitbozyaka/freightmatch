@@ -42,7 +42,6 @@ const formSchema = z.object({
     .number({ message: "Deadline is required" })
     .int()
     .positive("Deadline must be a positive number of hours"),
-  pickupAt: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,7 +49,7 @@ type FormValues = z.infer<typeof formSchema>;
 const STEP_FIELDS: Array<readonly (keyof FormValues)[]> = [
   ["origin", "destination"],
   ["title", "cargoType", "weightKg"],
-  ["deadlineHours", "pickupAt"],
+  ["deadlineHours"],
   [],
 ];
 
@@ -63,7 +62,6 @@ const DEFAULT_VALUES: FormValues = {
   cargoType: "general",
   weightKg: 0,
   deadlineHours: 24,
-  pickupAt: "",
 };
 
 export default function NewLoadWizardPage() {
@@ -93,20 +91,28 @@ export default function NewLoadWizardPage() {
         }
       }
     } catch {
-      // ignore corrupt sessionStorage
+      /* corrupt sessionStorage */
     }
     setHydrated(true);
   }, [form]);
 
   const watched = form.watch();
   React.useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
+    if (!hydrated) return;
     try {
-      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...watched, step }));
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...form.getValues(), step }));
     } catch {
-      // ignore quota errors
+      /* quota exceeded */
     }
-  }, [watched, step, hydrated]);
+    const subscription = form.watch((values) => {
+      try {
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...values, step }));
+      } catch {
+        /* quota exceeded */
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, hydrated, step]);
 
   const goNext = React.useCallback(async () => {
     const fields = STEP_FIELDS[step];
@@ -134,7 +140,7 @@ export default function NewLoadWizardPage() {
     try {
       window.sessionStorage.removeItem(STORAGE_KEY);
     } catch {
-      // ignore
+      /* */
     }
   };
 
@@ -434,14 +440,6 @@ function ScheduleStep({ form }: { form: UseFormReturn<FormValues> }) {
       <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">
         Hours from now until the load must be delivered.
       </p>
-
-      <FieldLabel htmlFor="pickupAt" label="Preferred pickup window" />
-      <Input
-        id="pickupAt"
-        type="datetime-local"
-        error={formState.errors.pickupAt?.message}
-        {...register("pickupAt")}
-      />
     </div>
   );
 }
@@ -467,10 +465,6 @@ function ReviewStep({ values }: { values: FormValues }) {
           value={Number.isFinite(values.weightKg) ? `${values.weightKg.toLocaleString()} kg` : "—"}
         />
         <ReviewRow label="Deadline" value={`${values.deadlineHours} hours`} />
-        <ReviewRow
-          label="Preferred pickup"
-          value={values.pickupAt ? formatDateTime(values.pickupAt) : "Flexible"}
-        />
       </dl>
     </div>
   );
@@ -544,8 +538,10 @@ function CityAutocomplete({
   const [suggestions, setSuggestions] = React.useState<NominatimSuggestion[]>([]);
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [highlight, setHighlight] = React.useState(-1);
   const errorId = error ? `${id}-error` : undefined;
   const listboxId = `${id}-listbox`;
+  const optionId = (i: number) => `${id}-opt-${i}`;
 
   React.useEffect(() => {
     const trimmed = value.trim();
@@ -558,18 +554,11 @@ function CityAutocomplete({
     setLoading(true);
     const handle = window.setTimeout(async () => {
       try {
-        const url = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
-          q: trimmed,
-          format: "jsonv2",
-          limit: "5",
-          addressdetails: "0",
-        }).toString()}`;
-        const response = await fetch(url, { headers: { Accept: "application/json" } });
-        if (!response.ok) throw new Error("Nominatim error");
-        const payload = (await response.json()) as NominatimSuggestion[];
-        if (!cancelled) setSuggestions(Array.isArray(payload) ? payload : []);
-      } catch {
-        if (!cancelled) setSuggestions([]);
+        const results = await searchNominatim(trimmed);
+        if (!cancelled) {
+          setSuggestions(results);
+          setHighlight(results.length > 0 ? 0 : -1);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -579,6 +568,11 @@ function CityAutocomplete({
       window.clearTimeout(handle);
     };
   }, [value]);
+
+  const commit = (s: NominatimSuggestion) => {
+    onChange(s.display_name);
+    setOpen(false);
+  };
 
   return (
     <div className="relative">
@@ -591,6 +585,9 @@ function CityAutocomplete({
         aria-autocomplete="list"
         aria-expanded={open && suggestions.length > 0}
         aria-controls={listboxId}
+        aria-activedescendant={
+          open && highlight >= 0 && suggestions[highlight] ? optionId(highlight) : undefined
+        }
         role="combobox"
         className={cn(
           "fm-focus-ring w-full rounded-md border bg-slate-800/95 px-3.5 py-3 font-mono text-sm text-slate-100 placeholder:text-slate-500",
@@ -609,6 +606,23 @@ function CityAutocomplete({
           onChange(e.target.value);
           setOpen(true);
         }}
+        onKeyDown={(e) => {
+          if (!open || suggestions.length === 0) return;
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setHighlight((h) => (h + 1) % suggestions.length);
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setHighlight((h) => (h <= 0 ? suggestions.length - 1 : h - 1));
+          } else if (e.key === "Enter" && highlight >= 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            commit(suggestions[highlight]);
+          } else if (e.key === "Escape") {
+            e.stopPropagation();
+            setOpen(false);
+          }
+        }}
       />
       {open && (loading || suggestions.length > 0) ? (
         <ul
@@ -621,16 +635,26 @@ function CityAutocomplete({
               <Loader2 className="h-3 w-3 animate-spin" aria-hidden /> Searching…
             </li>
           ) : null}
-          {suggestions.map((s) => (
-            <li key={`${s.lat},${s.lon}`}>
+          {suggestions.map((s, i) => (
+            <li
+              key={`${s.lat},${s.lon}`}
+              id={optionId(i)}
+              role="option"
+              aria-selected={i === highlight}
+            >
               <button
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onChange(s.display_name);
-                  setOpen(false);
+                  commit(s);
                 }}
-                className="block w-full rounded-sm px-3 py-2 text-left text-xs text-slate-200 hover:bg-amber-400/10 hover:text-amber-200"
+                onMouseEnter={() => setHighlight(i)}
+                className={cn(
+                  "block w-full rounded-sm px-3 py-2 text-left text-xs",
+                  i === highlight
+                    ? "bg-amber-400/15 text-amber-100"
+                    : "text-slate-200 hover:bg-amber-400/10 hover:text-amber-200",
+                )}
               >
                 {s.display_name}
               </button>
@@ -696,32 +720,39 @@ function DistanceCard({ origin, destination }: { origin: string; destination: st
   );
 }
 
-const geocodeMemo = new Map<string, Promise<{ lat: number; lng: number } | null>>();
+const searchMemo = new Map<string, Promise<NominatimSuggestion[]>>();
 
-function geocode(value: string): Promise<{ lat: number; lng: number } | null> {
-  const key = value.trim().toLowerCase();
-  if (!key) return Promise.resolve(null);
-  const cached = geocodeMemo.get(key);
+function searchNominatim(query: string): Promise<NominatimSuggestion[]> {
+  const key = query.trim().toLowerCase();
+  if (!key) return Promise.resolve([]);
+  const cached = searchMemo.get(key);
   if (cached) return cached;
   const url = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
-    q: value.trim(),
+    q: query.trim(),
     format: "jsonv2",
-    limit: "1",
+    limit: "5",
+    addressdetails: "0",
   }).toString()}`;
   const request = fetch(url, { headers: { Accept: "application/json" } })
     .then(async (response) => {
-      if (!response.ok) return null;
-      const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
-      const first = payload[0];
-      if (!first) return null;
-      const lat = Number.parseFloat(String(first.lat ?? ""));
-      const lng = Number.parseFloat(String(first.lon ?? ""));
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-      return { lat, lng };
+      if (!response.ok) return [] as NominatimSuggestion[];
+      const payload = (await response.json()) as NominatimSuggestion[];
+      return Array.isArray(payload) ? payload : [];
     })
-    .catch(() => null);
-  geocodeMemo.set(key, request);
+    .catch(() => [] as NominatimSuggestion[]);
+  searchMemo.set(key, request);
   return request;
+}
+
+function geocode(value: string): Promise<{ lat: number; lng: number } | null> {
+  return searchNominatim(value).then((results) => {
+    const first = results[0];
+    if (!first) return null;
+    const lat = Number.parseFloat(String(first.lat ?? ""));
+    const lng = Number.parseFloat(String(first.lon ?? ""));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  });
 }
 
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -733,15 +764,6 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
   const lat2 = toRad(b.lat);
   const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-}
-
-function formatDateTime(value: string) {
-  const ts = Date.parse(value);
-  if (!Number.isFinite(ts)) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(ts));
 }
 
 function messageFromError(err: unknown, fallback: string) {
