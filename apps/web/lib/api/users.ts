@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiFetch } from "./client";
+import { ApiResponseError, apiFetch } from "./client";
 
 const UserSchema = z.object({
   id: z.string().optional(),
@@ -52,12 +52,17 @@ const CarrierProfileResponseSchema = UserSchema.extend({
   carrierProfile: CarrierProfileSchema.nullable(),
 });
 
+const ProfilePhotoUploadResponseSchema = z.object({
+  profilePhotoUrl: z.string(),
+});
+
 export type User = z.infer<typeof UserSchema>;
 export type CarrierProfile = z.infer<typeof CarrierProfileSchema>;
 export type ShipperProfile = z.infer<typeof ShipperProfileSchema>;
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;
+export type ProfilePhotoUploadResponse = z.infer<typeof ProfilePhotoUploadResponseSchema>;
 
 export type RegisterInput = {
   email: string;
@@ -120,4 +125,48 @@ export async function updateCarrierProfile(
     body: JSON.stringify(input),
   });
   return CarrierProfileResponseSchema.parse(data);
+}
+
+export function uploadProfilePhoto(
+  photo: Blob,
+  onProgress?: (progress: number) => void,
+): Promise<ProfilePhotoUploadResponse> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/proxy/api/users/profile/photo");
+    xhr.responseType = "text";
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+
+    xhr.onload = () => {
+      const text = xhr.responseText;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(ProfilePhotoUploadResponseSchema.parse(JSON.parse(text)));
+        } catch {
+          reject(new Error("Photo uploaded, but the response was not valid."));
+        }
+        return;
+      }
+
+      let message = text || "Photo upload failed.";
+      try {
+        const json = JSON.parse(text) as { error?: string; message?: string };
+        message = json.message ?? json.error ?? message;
+      } catch {
+        // use raw text
+      }
+      reject(new ApiResponseError(xhr.status, message));
+    };
+
+    xhr.onerror = () => reject(new Error("Network error while uploading photo."));
+    xhr.onabort = () => reject(new Error("Photo upload was cancelled."));
+
+    const formData = new FormData();
+    formData.append("photo", photo, "profile-photo.webp");
+    xhr.send(formData);
+  });
 }

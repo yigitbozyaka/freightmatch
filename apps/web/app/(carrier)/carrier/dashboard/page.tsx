@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { scaleLinear, scalePoint } from "@visx/scale";
 import { LinePath } from "@visx/shape";
 import { AlertTriangle, Clock3, MapPin, PackageCheck, Route, ShieldCheck } from "lucide-react";
 import { RouteMap } from "@/components/maps/RouteMap";
+import { Button } from "@/components/primitives/button";
 import { KpiTile } from "@/components/primitives/KpiTile";
 import { MonoNum } from "@/components/primitives/MonoNum";
 import { SectionHeader } from "@/components/primitives/SectionHeader";
@@ -184,7 +186,7 @@ function CompleteProfileBanner() {
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-amber-400/50 bg-slate-950/50 text-amber-400">
           <AlertTriangle className="h-5 w-5" aria-hidden="true" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h2 className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
             Complete your profile
           </h2>
@@ -192,6 +194,9 @@ function CompleteProfileBanner() {
             Add truck type and capacity to keep carrier matching ready.
           </p>
         </div>
+        <Button asChild size="sm" className="w-full sm:w-auto">
+          <Link href="/profile">Edit profile</Link>
+        </Button>
       </div>
     </section>
   );

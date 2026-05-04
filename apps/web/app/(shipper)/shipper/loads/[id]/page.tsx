@@ -18,6 +18,7 @@ import * as loadsApi from "@/lib/api/loads";
 import type { Load, LoadStatus } from "@/lib/api/loads";
 import * as matchApi from "@/lib/api/match";
 import type { Recommendation } from "@/lib/api/match";
+import { resolveUploadedPhotoUrl } from "@/lib/api/uploads";
 import { getUserById, type ProfileResponse } from "@/lib/api/users";
 
 const VALID_TRANSITIONS: Record<LoadStatus, LoadStatus[]> = {
@@ -649,11 +650,12 @@ function BidCard({
 }
 
 function CarrierAvatar({ name, photoUrl }: { name: string; photoUrl: string | null }) {
-  if (photoUrl) {
+  const resolvedPhotoUrl = resolveUploadedPhotoUrl(photoUrl);
+  if (resolvedPhotoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={photoUrl}
+        src={resolvedPhotoUrl}
         alt={name}
         className="h-10 w-10 shrink-0 rounded-full border border-slate-700 object-cover"
       />
