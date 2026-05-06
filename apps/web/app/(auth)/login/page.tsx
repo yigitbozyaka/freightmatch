@@ -50,6 +50,13 @@ export default function LoginPage() {
         return;
       }
 
+      if (error instanceof ApiResponseError && error.code === "PENDING_APPROVAL") {
+        setFormError(
+          "Your account is pending approval. An administrator must approve it before you can sign in.",
+        );
+        return;
+      }
+
       setFormError(error instanceof Error ? error.message : "Unable to sign in right now.");
     }
   }

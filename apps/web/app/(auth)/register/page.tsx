@@ -10,6 +10,7 @@ import { AuthShell } from "../_components/auth-shell";
 import { dashboardForRole } from "../_lib/redirects";
 import { Button } from "@/components/primitives/button";
 import { Input } from "@/components/primitives/input";
+import { ApiResponseError } from "@/lib/api/client";
 import { cn } from "@/lib/ui/cn";
 import { login, register as registerUser } from "@/lib/api/users";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -60,6 +61,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { setUser } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingApproval, setPendingApproval] = useState(false);
 
   const {
     formState: { errors, isSubmitting },
@@ -77,17 +79,29 @@ export default function RegisterPage() {
 
   async function onSubmit(values: RegisterFormValues) {
     setFormError(null);
+    setPendingApproval(false);
 
     try {
       await registerUser(values);
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : "Unable to create the account right now.",
+      );
+      return;
+    }
+
+    try {
       const result = await login({ email: values.email, password: values.password });
       setUser(result.user);
       router.replace(dashboardForRole(result.user.role));
       router.refresh();
     } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : "Unable to create the account right now.",
-      );
+      if (error instanceof ApiResponseError && error.code === "PENDING_APPROVAL") {
+        setPendingApproval(true);
+        return;
+      }
+
+      setFormError(error instanceof Error ? error.message : "Account created but sign-in failed.");
     }
   }
 
@@ -103,9 +117,24 @@ export default function RegisterPage() {
       heading="Create account"
       subheading="Create the account profile that determines which FreightMatch console you enter."
     >
+      {pendingApproval ? (
+        <div
+          className="space-y-4 rounded-md border border-amber-400/45 bg-amber-400/10 px-3.5 py-4"
+          role="status"
+        >
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300">
+            Account pending approval
+          </p>
+          <p className="text-sm leading-6 text-slate-300">
+            Your account was created. An administrator must approve it before you can sign in. You
+            will receive access once approval completes.
+          </p>
+        </div>
+      ) : null}
+
       <form
         aria-describedby={formErrorId}
-        className="space-y-5"
+        className={cn("space-y-5", pendingApproval && "hidden")}
         noValidate
         onSubmit={handleSubmit(onSubmit)}
       >

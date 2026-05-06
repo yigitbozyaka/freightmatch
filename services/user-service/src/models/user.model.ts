@@ -31,6 +31,7 @@ export interface IUser extends Document {
   shipperProfile?: IShipperProfile;
   failedLoginAttempts: number;
   lockUntil: Date | null;
+  isApproved: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +61,11 @@ const userSchema = new Schema<IUser>(
     lockUntil: {
       type: Date,
       default: null,
+    },
+    isApproved: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     carrierProfile: {
       type: {

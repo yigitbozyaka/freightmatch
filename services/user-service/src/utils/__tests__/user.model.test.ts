@@ -136,5 +136,26 @@ describe('User Model', () => {
       expect(err).toBeDefined();
       expect(err!.errors['role']).toBeDefined();
     });
+
+    it('should default isApproved to false on new users', () => {
+      const user = new User({
+        email: 'pending@test.com',
+        passwordHash: 'hashed',
+        role: 'Carrier',
+      });
+
+      expect(user.isApproved).toBe(false);
+    });
+
+    it('should accept an explicit isApproved=true', () => {
+      const user = new User({
+        email: 'approved@test.com',
+        passwordHash: 'hashed',
+        role: 'Shipper',
+        isApproved: true,
+      });
+
+      expect(user.isApproved).toBe(true);
+    });
   });
 });

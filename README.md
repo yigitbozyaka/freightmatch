@@ -57,6 +57,10 @@ pnpm dev
 
 This starts all four services in parallel with hot-reload.
 
+## User approval
+
+This is a public open-source project. New accounts are created in a **pending** state and cannot sign in until an administrator approves them in the database. See [docs/USER_APPROVAL.md](docs/USER_APPROVAL.md) for the manual approval runbook.
+
 ## Full Documentation
 
 See [docs/setup-guide.md](docs/setup-guide.md) for detailed setup, configuration, and deployment instructions.
