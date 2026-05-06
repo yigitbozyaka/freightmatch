@@ -195,7 +195,7 @@ function CompleteProfileBanner() {
           </p>
         </div>
         <Button asChild size="sm" className="w-full sm:w-auto">
-          <Link href="/profile">Edit profile</Link>
+          <Link href="/carrier/profile">Edit profile</Link>
         </Button>
       </div>
     </section>

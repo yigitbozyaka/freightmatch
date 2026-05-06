@@ -54,6 +54,8 @@ const CarrierProfileResponseSchema = UserSchema.extend({
 
 const ProfilePhotoUploadResponseSchema = z.object({
   profilePhotoUrl: z.string(),
+});
+
 const ShipperProfileResponseSchema = UserSchema.extend({
   shipperProfile: ShipperProfileSchema.nullable(),
 });
@@ -177,6 +179,8 @@ export function uploadProfilePhoto(
     formData.append("photo", photo, "profile-photo.webp");
     xhr.send(formData);
   });
+}
+
 export async function updateShipperProfile(
   input: UpdateShipperProfileInput,
 ): Promise<z.infer<typeof ShipperProfileResponseSchema>> {

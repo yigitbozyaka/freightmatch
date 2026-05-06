@@ -99,14 +99,12 @@ function UserMenu({
             <p className="truncate font-mono text-[11px] text-slate-300">{email}</p>
           </div>
 
-          {isShipper ? (
-            <MenuLink
-              href="/profile"
-              icon={<UserCircle aria-hidden="true" className="h-3.5 w-3.5" />}
-              label="Profile"
-              onSelect={() => setOpen(false)}
-            />
-          ) : null}
+          <MenuLink
+            href={isShipper ? "/shipper/profile" : "/carrier/profile"}
+            icon={<UserCircle aria-hidden="true" className="h-3.5 w-3.5" />}
+            label="Profile"
+            onSelect={() => setOpen(false)}
+          />
 
           <MenuLink
             href="/settings"

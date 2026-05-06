@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/register", "/403", "/"];
 const SHIPPER_PATHS = ["/shipper"];
-const CARRIER_PATHS = ["/marketplace", "/carrier", "/profile"];
+const CARRIER_PATHS = ["/marketplace", "/carrier"];
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
