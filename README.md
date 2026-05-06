@@ -4,6 +4,8 @@ Microservices-based freight matching platform connecting shippers with carriers 
 
 ![CI](https://github.com/yigitbozyaka/freightmatch/actions/workflows/ci.yml/badge.svg)
 
+📑 **Detailed Project Report:** [PROJECT_REPORT.md](PROJECT_REPORT.md) — full system walkthrough covering architecture, microservices, Kafka, security, AI, CI/CD, and engineering decisions.
+
 📘 **API Reference:** [FreightMatch API Documentation](https://yigitbozyaka.github.io/freightmatch/)
 
 ## Architecture
