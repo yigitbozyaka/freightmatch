@@ -208,3 +208,40 @@ body {
     border-top-right-radius: 10px;
   }
 }
+
+.fm-marketplace-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.fm-marketplace-pin .fm-marketplace-pin-dot {
+  position: absolute;
+  border-radius: 9999px;
+  background: #f5b342;
+  box-shadow: 0 0 0 2px rgba(10, 14, 18, 0.95);
+  transition: transform 0.15s ease-out;
+}
+
+.fm-marketplace-pin .fm-marketplace-pin-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgba(245, 179, 66, 0.55);
+  background: rgba(245, 179, 66, 0.12);
+}
+
+.fm-marketplace-pin:hover .fm-marketplace-pin-dot {
+  transform: scale(1.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-marketplace-pin .fm-marketplace-pin-dot {
+    transition: none;
+  }
+  .fm-marketplace-pin:hover .fm-marketplace-pin-dot {
+    transform: none;
+  }
+}
