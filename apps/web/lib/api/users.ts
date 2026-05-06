@@ -54,6 +54,8 @@ const CarrierProfileResponseSchema = UserSchema.extend({
 
 const ProfilePhotoUploadResponseSchema = z.object({
   profilePhotoUrl: z.string(),
+const ShipperProfileResponseSchema = UserSchema.extend({
+  shipperProfile: ShipperProfileSchema.nullable(),
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -79,6 +81,12 @@ export type UpdateCarrierProfileInput = {
   truckType?: z.infer<typeof TruckTypeSchema>;
   capacityKg?: number;
   homeCity?: string;
+  profilePhotoUrl?: string | null;
+  bio?: string | null;
+};
+
+export type UpdateShipperProfileInput = {
+  companyName?: string | null;
   profilePhotoUrl?: string | null;
   bio?: string | null;
 };
@@ -169,4 +177,12 @@ export function uploadProfilePhoto(
     formData.append("photo", photo, "profile-photo.webp");
     xhr.send(formData);
   });
+export async function updateShipperProfile(
+  input: UpdateShipperProfileInput,
+): Promise<z.infer<typeof ShipperProfileResponseSchema>> {
+  const data = await apiFetch<unknown>("api/users/shipper-profile", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return ShipperProfileResponseSchema.parse(data);
 }
