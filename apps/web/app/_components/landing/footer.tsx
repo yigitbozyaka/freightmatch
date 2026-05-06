@@ -35,7 +35,10 @@ export function LandingFooter() {
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 font-mono text-[10px] tracking-[0.28em] text-slate-500 uppercase sm:flex-row sm:items-center sm:justify-between sm:px-10">
           <span>© 2026 FreightMatch · All systems nominal</span>
           <span className="flex items-center gap-2">
-            <span className="inline-block h-1.5 w-1.5 animate-[status-flicker_3s_ease-in-out_infinite] rounded-full bg-[var(--color-go)]" />
+            <span
+              aria-hidden="true"
+              className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-go)] shadow-[0_0_8px_rgba(61,214,140,0.55)]"
+            />
             uptime · 99.98%
           </span>
         </div>

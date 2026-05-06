@@ -36,14 +36,18 @@ function MessageList({ variant }: { variant: "drawer" | "page" }) {
 
   return (
     <div
+      aria-live="polite"
+      aria-relevant="additions text"
       className={cn(
         "min-h-0 flex-1 overflow-y-auto px-4 py-5",
         variant === "page" ? "sm:px-6 lg:px-8" : "sm:px-6",
       )}
+      role="log"
     >
       {!isHydrated ? (
         <div className="flex h-full items-center justify-center font-mono text-sm text-amber-400">
-          ◐
+          <span aria-hidden="true">◐</span>
+          <span className="sr-only">Loading conversation</span>
         </div>
       ) : messages.length === 0 ? (
         <div className="flex h-full items-center justify-center">
@@ -108,7 +112,10 @@ function MessageBubble({ message }: { message: AssistantChatMessage }) {
             </div>
           )
         ) : (
-          <p className="font-mono text-lg text-amber-400">◐</p>
+          <p className="font-mono text-lg text-amber-400" role="status">
+            <span aria-hidden="true">◐</span>
+            <span className="sr-only">Generating response</span>
+          </p>
         )}
       </div>
     </article>
