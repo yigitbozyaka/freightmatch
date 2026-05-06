@@ -4,6 +4,7 @@ import { JetBrains_Mono } from "next/font/google";
 import { GridBackdrop } from "@/components/GridBackdrop";
 import { Providers } from "./providers";
 import "leaflet/dist/leaflet.css";
+import "react-image-crop/dist/ReactCrop.css";
 import "./globals.css";
 
 const geist = Geist({

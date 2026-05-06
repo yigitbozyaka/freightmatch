@@ -2,7 +2,9 @@ import { Router } from 'express';
 import { userController } from '../controllers/user.controller';
 import { carrierController } from '../controllers/carrier.controller';
 import { shipperController } from '../controllers/shipper.controller';
+import { photoController } from '../controllers/photo.controller';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
+import { handleMulterError, uploadMiddleware } from '../middlewares/upload.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { z } from 'zod';
 
@@ -45,9 +47,16 @@ router.patch(
   shipperController.updateProfile,
 );
 
+router.post(
+  '/profile/photo',
+  authenticate,
+  uploadMiddleware,
+  handleMulterError,
+  photoController.uploadPhoto,
+);
+
 router.get('/profile', authenticate, userController.getProfile);
 
 router.get('/:id', authenticate, userController.getById);
 
 export default router;
-

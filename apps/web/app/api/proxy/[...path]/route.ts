@@ -77,13 +77,17 @@ async function proxyRequest(req: NextRequest, ctx: RouteContext): Promise<NextRe
   const isLogin = pathStr === "api/users/login";
   const isLogout = pathStr === "api/users/logout";
 
-  const headers = new Headers({ "Content-Type": "application/json", Accept: "application/json" });
+  const headers = new Headers({ Accept: "application/json" });
+  const requestContentType = req.headers.get("Content-Type");
+  if (requestContentType) {
+    headers.set("Content-Type", requestContentType);
+  }
   const accessToken = cookieStore.get(ACCESS_COOKIE)?.value;
   if (accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  const body = req.method !== "GET" && req.method !== "HEAD" ? await req.text() : undefined;
+  const body = req.method !== "GET" && req.method !== "HEAD" ? await req.arrayBuffer() : undefined;
 
   const callUpstream = () => fetch(upstreamUrl, { method: req.method, headers, body });
 
@@ -121,8 +125,8 @@ async function proxyRequest(req: NextRequest, ctx: RouteContext): Promise<NextRe
     return response;
   }
 
-  const contentType = upstream.headers.get("Content-Type") ?? "application/json";
-  if (contentType.includes("text/event-stream")) {
+  const responseContentType = upstream.headers.get("Content-Type") ?? "application/json";
+  if (responseContentType.includes("text/event-stream")) {
     const responseHeaders = forwardedHeaders(upstream);
     if (!responseHeaders.has("Cache-Control")) {
       responseHeaders.set("Cache-Control", "no-cache, no-transform");
@@ -134,10 +138,10 @@ async function proxyRequest(req: NextRequest, ctx: RouteContext): Promise<NextRe
     });
   }
 
-  const responseBody = await upstream.text();
-  return new NextResponse(responseBody || null, {
+  const responseBody = await upstream.arrayBuffer();
+  return new NextResponse(responseBody.byteLength > 0 ? responseBody : null, {
     status: upstream.status,
-    headers: { "Content-Type": contentType },
+    headers: { "Content-Type": responseContentType },
   });
 }
 
