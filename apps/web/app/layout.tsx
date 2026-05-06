@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { JetBrains_Mono } from "next/font/google";
 import { GridBackdrop } from "@/components/GridBackdrop";
+import { SkipToMain } from "@/components/SkipToMain";
 import { Providers } from "./providers";
 import "leaflet/dist/leaflet.css";
 import "react-image-crop/dist/ReactCrop.css";
@@ -31,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
+        <SkipToMain />
         <GridBackdrop />
         <Providers>{children}</Providers>
       </body>

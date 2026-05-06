@@ -22,7 +22,11 @@ export function AuthShell({
   footerText,
 }: AuthShellProps) {
   return (
-    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10 sm:px-6">
+    <main
+      className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10 sm:px-6"
+      id="main"
+      tabIndex={-1}
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-10 opacity-[0.07] mix-blend-screen"

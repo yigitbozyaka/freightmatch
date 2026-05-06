@@ -6,7 +6,7 @@ import { OpsStrip } from "./_components/landing/ops-strip";
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-dvh flex-col">
+    <main className="flex min-h-dvh flex-col" id="main" tabIndex={-1}>
       <Hero />
       <FeatureGrid />
       <OpsStrip />

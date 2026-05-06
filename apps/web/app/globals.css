@@ -53,8 +53,23 @@ body {
 .fm-focus-ring:focus-visible {
   border-color: rgba(245, 179, 66, 0.85);
   box-shadow:
-    0 0 0 1px rgba(245, 179, 66, 0.95),
-    0 0 0 4px rgba(245, 179, 66, 0.16);
+    0 0 0 2px rgba(10, 14, 18, 0.95),
+    0 0 0 5px rgba(245, 179, 66, 0.55);
+}
+
+.fm-skip-link {
+  clip-path: inset(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .fm-panel-surface {
