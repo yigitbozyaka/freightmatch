@@ -103,6 +103,15 @@ export class AuthService {
       });
     }
 
+    if (!user.isApproved) {
+      const error = new Error(
+        'Your account is pending approval. An administrator must approve it before you can sign in.',
+      ) as Error & { statusCode: number; errorCode: string };
+      error.statusCode = 403;
+      error.errorCode = ErrorCode.PENDING_APPROVAL;
+      throw error;
+    }
+
     const payload: TokenPayload = {
       userId: user._id.toString(),
       email: user.email,

@@ -247,6 +247,10 @@ paths:
       description: |
         Authenticate with email and password. Returns JWT access and refresh tokens.
 
+        **Manual approval gate:** New accounts default to `isApproved=false` and cannot
+        sign in until an administrator flips the flag in the database. Login attempts
+        with valid credentials but unapproved accounts return `403 PENDING_APPROVAL`.
+
         **Rate limit:** 5 requests/second per IP.
       requestBody:
         required: true
@@ -292,6 +296,16 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Account exists but has not been approved yet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: PENDING_APPROVAL
+                message: "Your account is pending approval. An administrator must approve it before you can sign in."
+                timestamp: "2026-05-07T12:00:00.000Z"
         '429':
           $ref: '#/components/responses/RateLimited'
 
