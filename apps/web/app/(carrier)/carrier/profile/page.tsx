@@ -545,10 +545,7 @@ function DetailsPanel({
             control={control}
             name="truckType"
             render={({ field }) => (
-              <Select
-                value={isTruckType(field.value) ? field.value : undefined}
-                onValueChange={field.onChange}
-              >
+              <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger id="carrier-truck-type">
                   <SelectValue placeholder="Select your type" />
                 </SelectTrigger>
