@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { ArrowRight, CheckCircle2, Gavel, PackagePlus, Truck, XCircle } from "lucide-react";
 import { ActiveRoutesMap, type ActiveRoute } from "@/components/maps/ActiveRoutesMap";
@@ -42,6 +43,8 @@ type LoadRow = {
 };
 
 export default function ShipperDashboardPage() {
+  const router = useRouter();
+
   const profileQuery = useQuery({
     queryKey: ["users", "profile"],
     queryFn: getProfile,
@@ -248,6 +251,7 @@ export default function ShipperDashboardPage() {
                 ]}
                 rows={recentRows}
                 rowKey={(row) => row._id}
+                onRowClick={(row) => router.push(`/shipper/loads/${row._id}`)}
               />
             )}
           </section>
