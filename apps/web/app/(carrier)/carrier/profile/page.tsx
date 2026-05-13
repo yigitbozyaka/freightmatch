@@ -246,7 +246,7 @@ export default function CarrierProfilePage() {
             className="mt-1 text-2xl font-bold text-slate-100 sm:text-3xl"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Profile is this updating?
+            Profile
           </h1>
           <p className="mt-2 text-sm text-slate-500">
             Control the carrier signals shippers see before they accept a bid.
@@ -545,14 +545,14 @@ function DetailsPanel({
             control={control}
             name="truckType"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={isTruckType(field.value) ? field.value : ""}
+                onValueChange={field.onChange}
+              >
                 <SelectTrigger id="carrier-truck-type">
                   <SelectValue placeholder="Select your type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNSET_TRUCK_TYPE} disabled>
-                    Select your type
-                  </SelectItem>
                   {TRUCK_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>
                       {truckTypeLabels[type]}
