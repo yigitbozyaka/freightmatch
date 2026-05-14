@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/register", "/403", "/"];
+const PUBLIC_PATHS = ["/login", "/register", "/403", "/", "/status"];
 const SHIPPER_PATHS = ["/shipper"];
 const CARRIER_PATHS = ["/marketplace", "/carrier"];
 
