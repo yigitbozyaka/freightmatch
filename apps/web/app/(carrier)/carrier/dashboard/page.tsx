@@ -28,17 +28,32 @@ type EarningsPoint = {
   value: number;
 };
 
-// Mock data: no carrier earnings endpoint exists yet, so the mini-chart is illustrative only.
-const MOCK_EARNINGS: EarningsPoint[] = [
-  { label: "W1", value: 4200 },
-  { label: "W2", value: 5100 },
-  { label: "W3", value: 4600 },
-  { label: "W4", value: 5900 },
-  { label: "W5", value: 6400 },
-  { label: "W6", value: 7100 },
-];
-
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function computeWeeklyEarnings(bids: Bid[]): EarningsPoint[] {
+  const now = Date.now();
+  const weeks = Array.from({ length: 6 }, (_, i) => ({
+    label: `W${i + 1}`,
+    start: now - (6 - i) * 7 * MS_PER_DAY,
+    end: now - (5 - i) * 7 * MS_PER_DAY,
+    value: 0,
+  }));
+
+  for (const bid of bids) {
+    if (bid.status !== "Accepted") continue;
+    const ts = getTimestamp(bid.updatedAt ?? bid.createdAt);
+    if (ts === 0) continue;
+    for (const week of weeks) {
+      if (ts >= week.start && ts < week.end) {
+        week.value += bid.priceUSD;
+        break;
+      }
+    }
+  }
+
+  return weeks.map(({ label, value }) => ({ label, value }));
+}
+
 const PICKUP_STATUSES = new Set<LoadStatus>(["Matched", "InTransit"]);
 
 export default function CarrierDashboardPage() {
@@ -96,6 +111,8 @@ export default function CarrierDashboardPage() {
     [availableLoads],
   );
 
+  const weeklyEarnings = React.useMemo(() => computeWeeklyEarnings(bids), [bids]);
+
   const pendingBids = bids.filter((bid) => bid.status === "Pending").length;
   const recentBids = bids.filter((bid) => isWithinLastDays(bid.createdAt, 30));
   const recentAcceptedBids = recentBids.filter((bid) => bid.status === "Accepted").length;
@@ -141,7 +158,7 @@ export default function CarrierDashboardPage() {
       </section>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
-        <EarningsPanel />
+        <EarningsPanel data={weeklyEarnings} />
         <UpcomingPickupsPanel
           hasAcceptedBids={acceptedBidsForLookup.length > 0}
           isLoading={pickupQueriesLoading}
@@ -227,8 +244,8 @@ function TrustScoreTile({ value }: { value: number }) {
   );
 }
 
-function EarningsPanel() {
-  const total = MOCK_EARNINGS.reduce((sum, point) => sum + point.value, 0);
+function EarningsPanel({ data }: { data: EarningsPoint[] }) {
+  const total = data.reduce((sum, point) => sum + point.value, 0);
 
   return (
     <section className="fm-panel-muted rounded-lg p-4">
@@ -247,7 +264,7 @@ function EarningsPanel() {
           <span>6wk</span>
         </div>
       </div>
-      <EarningsMiniChart data={MOCK_EARNINGS} />
+      <EarningsMiniChart data={data} />
     </section>
   );
 }
@@ -260,8 +277,9 @@ function EarningsMiniChart({ data }: { data: EarningsPoint[] }) {
     padding: 0.35,
     range: [18, chartWidth - 18],
   });
+  const maxValue = Math.max(...data.map((point) => point.value));
   const yScale = scaleLinear<number>({
-    domain: [0, Math.max(...data.map((point) => point.value)) * 1.12],
+    domain: [0, (maxValue > 0 ? maxValue : 100) * 1.12],
     nice: true,
     range: [chartHeight - 26, 16],
   });
