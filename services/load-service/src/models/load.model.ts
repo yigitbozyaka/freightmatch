@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+﻿import mongoose, { Document, Schema } from 'mongoose';
 
 export type LoadStatus = 'Draft' | 'Posted' | 'Matched' | 'InTransit' | 'Delivered' | 'Cancelled';
 
@@ -20,6 +20,7 @@ export interface IStatusHistoryEntry {
 export interface ILoad extends Document {
   _id: mongoose.Types.ObjectId;
   shipperId: string;
+  carrierId?: string;
   title: string;
   origin: string;
   destination: string;
@@ -46,6 +47,10 @@ const loadSchema = new Schema<ILoad>(
     shipperId: {
       type: String,
       required: true,
+      index: true,
+    },
+    carrierId: {
+      type: String,
       index: true,
     },
     title: {

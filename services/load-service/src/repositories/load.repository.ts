@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 import { Load, ILoad, LoadStatus } from '../models/load.model';
 
 export class LoadRepository {
@@ -32,6 +32,24 @@ export class LoadRepository {
           statusHistory: {
             from: fromStatus,
             to: toStatus,
+            timestamp: new Date(),
+          },
+        },
+      },
+      { new: true },
+    );
+  }
+
+  async matchWithCarrier(id: string, fromStatus: LoadStatus, carrierId: string): Promise<ILoad | null> {
+    return Load.findByIdAndUpdate(
+      id,
+      {
+        status: 'Matched',
+        carrierId,
+        $push: {
+          statusHistory: {
+            from: fromStatus,
+            to: 'Matched',
             timestamp: new Date(),
           },
         },

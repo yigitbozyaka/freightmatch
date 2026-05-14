@@ -1,4 +1,4 @@
-import { KAFKA_TOPICS } from '@freightmatch/contracts';
+﻿import { KAFKA_TOPICS } from '@freightmatch/contracts';
 import { loadRepository } from '../repositories/load.repository';
 import { ErrorCode, LoadUpdateData } from '../types';
 import { LoadStatus, VALID_TRANSITIONS } from '../models/load.model';
@@ -108,6 +108,34 @@ export class LoadService {
     const load = await this.getLoadById(id);
     this.validateTransition(load.status, newStatus);
     return loadRepository.updateStatus(id, load.status, newStatus);
+  }
+
+  async matchLoad(loadId: string, carrierId: string) {
+    const load = await this.getLoadById(loadId);
+    this.validateTransition(load.status, 'Matched');
+    return loadRepository.matchWithCarrier(loadId, load.status, carrierId);
+  }
+
+  async confirmPickup(loadId: string, carrierId: string) {
+    const load = await this.getLoadById(loadId);
+    if (load.carrierId !== carrierId) {
+      const error = new Error('Not authorized to confirm pickup for this load') as Error & { statusCode: number; errorCode: string };
+      error.statusCode = 403;
+      error.errorCode = ErrorCode.FORBIDDEN;
+      throw error;
+    }
+    return this.transitionStatus(loadId, 'InTransit');
+  }
+
+  async confirmDelivery(loadId: string, carrierId: string) {
+    const load = await this.getLoadById(loadId);
+    if (load.carrierId !== carrierId) {
+      const error = new Error('Not authorized to confirm delivery for this load') as Error & { statusCode: number; errorCode: string };
+      error.statusCode = 403;
+      error.errorCode = ErrorCode.FORBIDDEN;
+      throw error;
+    }
+    return this.transitionStatus(loadId, 'Delivered');
   }
 
   private validateTransition(currentStatus: LoadStatus, newStatus: LoadStatus): void {

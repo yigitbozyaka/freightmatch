@@ -128,6 +128,30 @@ export default function CarrierLoadDetailPage() {
     setDrawerOpen(true);
   }, [isProfileComplete, loadQuery.data?.deadlineHours, myBidForLoad]);
 
+  const pickupMutation = useMutation({
+    mutationFn: () => loadsApi.confirmPickup(loadId!),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["loads", loadId], data);
+      void queryClient.invalidateQueries({ queryKey: ["loads"] });
+      pushToast("Pickup confirmed");
+    },
+    onError: () => {
+      pushToast("Could not confirm pickup. Try again.", "error");
+    },
+  });
+
+  const deliveryMutation = useMutation({
+    mutationFn: () => loadsApi.confirmDelivery(loadId!),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["loads", loadId], data);
+      void queryClient.invalidateQueries({ queryKey: ["loads"] });
+      pushToast("Delivery confirmed");
+    },
+    onError: () => {
+      pushToast("Could not confirm delivery. Try again.", "error");
+    },
+  });
+
   const submitMutation = useMutation({
     mutationFn: (input: CreateBidInput) => bidsApi.create(input),
     onSuccess: (bid) => {
@@ -248,6 +272,10 @@ export default function CarrierLoadDetailPage() {
             isProfileComplete={isProfileComplete}
             onPlaceBid={handleOpenDrawer}
             loadStatus={load.status}
+            onConfirmPickup={() => pickupMutation.mutate()}
+            onConfirmDelivery={() => deliveryMutation.mutate()}
+            isPickupPending={pickupMutation.isPending}
+            isDeliveryPending={deliveryMutation.isPending}
           />
 
           {!isProfileComplete ? <ProfileGateCallout /> : null}
@@ -372,15 +400,25 @@ function YourBidPanel({
   isProfileComplete,
   onPlaceBid,
   loadStatus,
+  onConfirmPickup,
+  onConfirmDelivery,
+  isPickupPending,
+  isDeliveryPending,
 }: {
   bid: Bid | null;
   isProfileComplete: boolean;
   onPlaceBid: () => void;
   loadStatus: Load["status"];
+  onConfirmPickup?: () => void;
+  onConfirmDelivery?: () => void;
+  isPickupPending?: boolean;
+  isDeliveryPending?: boolean;
 }) {
   const acceptingBids = loadStatus === "Posted";
 
   if (bid) {
+    const anyPending = Boolean(isPickupPending || isDeliveryPending);
+
     return (
       <section className="fm-panel-surface rounded-lg p-5">
         <div className="flex items-center justify-between gap-3">
@@ -407,6 +445,34 @@ function YourBidPanel({
             changes.
           </p>
         </div>
+        {bid.status === "Accepted" && loadStatus === "Matched" && onConfirmPickup ? (
+          <div className="mt-5">
+            <Button
+              variant="primary"
+              className="w-full"
+              onClick={onConfirmPickup}
+              loading={isPickupPending}
+              disabled={anyPending}
+            >
+              <Truck className="h-3.5 w-3.5" aria-hidden="true" />
+              Confirm pickup
+            </Button>
+          </div>
+        ) : null}
+        {bid.status === "Accepted" && loadStatus === "InTransit" && onConfirmDelivery ? (
+          <div className="mt-5">
+            <Button
+              variant="primary"
+              className="w-full"
+              onClick={onConfirmDelivery}
+              loading={isDeliveryPending}
+              disabled={anyPending}
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Confirm delivery
+            </Button>
+          </div>
+        ) : null}
       </section>
     );
   }
