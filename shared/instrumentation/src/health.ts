@@ -1,3 +1,4 @@
+import v8 from 'v8';
 import mongoose from 'mongoose';
 
 export type HealthStatus = 'healthy' | 'unhealthy' | 'degraded';
@@ -33,15 +34,16 @@ export function createHealthCheck(serviceName: string, version: string = '1.0.0'
       message: mongoStatus === 1 ? 'Connected' : mongoStatus === 0 ? 'Disconnected' : 'Connecting',
     };
 
-    // Memory check
-    const memUsage = process.memoryUsage();
-    const memUsedMB = memUsage.heapUsed / 1024 / 1024;
-    const memTotalMB = memUsage.heapTotal / 1024 / 1024;
-    const memUsagePercent = (memUsedMB / memTotalMB) * 100;
+    // Memory check — compare heapUsed against V8's actual heap size limit,
+    // not heapTotal (currently allocated pages), which sits close to heapUsed by design.
+    const heapStats = v8.getHeapStatistics();
+    const memUsedMB = heapStats.used_heap_size / 1024 / 1024;
+    const memLimitMB = heapStats.heap_size_limit / 1024 / 1024;
+    const memUsagePercent = (memUsedMB / memLimitMB) * 100;
 
     checks.memory = {
       status: memUsagePercent > 90 ? 'unhealthy' : memUsagePercent > 70 ? 'degraded' : 'healthy',
-      message: `${memUsedMB.toFixed(0)}MB / ${memTotalMB.toFixed(0)}MB`,
+      message: `${memUsedMB.toFixed(0)}MB / ${memLimitMB.toFixed(0)}MB`,
     };
 
     const overallStatus = determineOverallStatus(checks);
