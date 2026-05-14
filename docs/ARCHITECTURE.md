@@ -8,7 +8,7 @@ All external traffic enters through NGINX on port 80; the four microservices, th
 
 ```mermaid
 flowchart TB
-    Browser["Browser\n(HTTPS + HttpOnly cookies)"]
+    Browser["Browser<br/>(HTTPS + HttpOnly cookies)"]
 
     Browser -->|"HTTPS, HttpOnly cookies"| NGINX
 
@@ -70,9 +70,14 @@ sequenceDiagram
 
     Shipper->>NGINX: POST /api/loads
     NGINX->>LS: forward
-    LS->>LS: create Load (status: Posted)
-    LS->>Kafka: publish load.created
+    LS->>LS: create Load (status: Draft)
     LS-->>Shipper: 201 Load created
+
+    Shipper->>NGINX: PATCH /api/loads/:id (status: Posted)
+    NGINX->>LS: forward
+    LS->>LS: transition Draft -> Posted
+    LS->>Kafka: publish load.created
+    LS-->>Shipper: 200 Load published
 
     Kafka->>MS: consume load.created
     MS->>US: GET /api/internal/carriers (x-internal-secret)
@@ -118,7 +123,7 @@ The Next.js BFF proxy intercepts every `/api/*` call, manages HttpOnly cookies, 
 ```mermaid
 sequenceDiagram
     participant Browser as Browser
-    participant BFF as "Next.js BFF proxy\n(/api/proxy/[...path])"
+    participant BFF as Next.js BFF proxy
     participant NGINX as NGINX
     participant US as user-service
 
@@ -130,7 +135,9 @@ sequenceDiagram
     Note over US: check lockout (5 fails = 423, 15 min lock)
     US-->>BFF: 200 {accessToken, refreshToken, user}
     BFF->>BFF: strip tokens from JSON body
-    BFF-->>Browser: 200 {user}\n+ Set-Cookie: fm_access (HttpOnly, sameSite=lax, 15min, secure in prod)\n+ Set-Cookie: fm_refresh (HttpOnly, sameSite=strict, 30d, always secure)
+    BFF-->>Browser: 200 {user}
+    Note over BFF,Browser: Set-Cookie: fm_access (HttpOnly, sameSite=lax, 15min, secure in prod)
+    Note over BFF,Browser: Set-Cookie: fm_refresh (HttpOnly, sameSite=strict, 30d, always secure)
 
     Note over Browser,US: Authenticated request
     Browser->>BFF: GET /api/loads (cookie: fm_access)
