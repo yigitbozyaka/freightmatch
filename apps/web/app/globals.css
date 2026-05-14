@@ -30,6 +30,10 @@ body {
   min-height: 100dvh;
 }
 
+button {
+  cursor: pointer;
+}
+
 @keyframes status-flicker {
   0%,
   18% {
