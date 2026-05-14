@@ -10,6 +10,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters for security'),
   CORS_ORIGIN: z.string().optional(),
   INTERNAL_SERVICE_SECRET: z.string().min(16, 'INTERNAL_SERVICE_SECRET must be at least 16 characters').optional(),
+  KAFKA_BROKER: z.string().default('localhost:29092'),
 });
 
 const parsed = envSchema.safeParse(process.env);
