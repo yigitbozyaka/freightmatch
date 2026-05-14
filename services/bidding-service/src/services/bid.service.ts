@@ -87,7 +87,7 @@ export class BidService {
   private async fetchLoad(loadId: string): Promise<{ shipperId: string }> {
     try {
       const response = await axios.get(`${env.LOAD_SERVICE_URL}/api/loads/${loadId}`, {
-        headers: { 'x-internal-request': 'true' },
+        headers: { 'x-internal-secret': env.INTERNAL_SERVICE_SECRET },
       });
       return response.data;
     } catch (err) {

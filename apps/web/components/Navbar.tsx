@@ -24,7 +24,7 @@ export function Navbar() {
   const dashboardHref = user?.role === "Carrier" ? "/carrier/dashboard" : "/shipper/dashboard";
 
   return (
-    <header className="h-12 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm flex items-center px-6 gap-4">
+    <header className="relative z-40 flex h-12 items-center gap-4 border-b border-slate-800 bg-slate-900/80 px-6 backdrop-blur-sm">
       <Link
         href={user ? dashboardHref : "/"}
         className="font-mono text-sm font-semibold text-slate-100 tracking-tight"

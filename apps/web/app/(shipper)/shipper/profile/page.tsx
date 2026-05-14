@@ -2,26 +2,44 @@
 
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, Save } from "lucide-react";
+import { Camera, ImageUp, Save, X } from "lucide-react";
+import ReactCrop, {
+  centerCrop,
+  convertToPixelCrop,
+  makeAspectCrop,
+  type Crop,
+  type PixelCrop,
+} from "react-image-crop";
 import { Button } from "@/components/primitives/button";
 import { Input } from "@/components/primitives/input";
 import { KpiTile } from "@/components/primitives/KpiTile";
 import { SectionHeader } from "@/components/primitives/SectionHeader";
 import { ToastHost, useToastQueue } from "@/components/primitives/ToastHost";
-import { useAuth } from "@/lib/hooks/useAuth";
 import { ApiResponseError } from "@/lib/api/client";
+import { resolveUploadedPhotoUrl } from "@/lib/api/uploads";
 import {
   getProfile,
   updateShipperProfile,
+  uploadProfilePhoto,
   type ProfileResponse,
   type ShipperProfile,
 } from "@/lib/api/users";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { cn } from "@/lib/ui/cn";
 
 const BIO_MAX = 500;
 const COMPANY_MAX = 200;
+const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PHOTO_OUTPUT_SIZE = 512;
+
+type SaveProfileResult = {
+  profile: ProfileResponse;
+  photoUploaded: boolean;
+  photoUploadError: string | null;
+};
 
 export default function ShipperProfilePage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, setUser } = useAuth();
   const { toasts, pushToast, dismissToast } = useToastQueue();
   const queryClient = useQueryClient();
 
@@ -61,6 +79,7 @@ export default function ShipperProfilePage() {
       onSuccess={(msg) => pushToast(msg, "info")}
       profile={profileQuery.data}
       queryClient={queryClient}
+      setUser={setUser}
       toastHost={<ToastHost toasts={toasts} onDismiss={dismissToast} />}
     />
   );
@@ -69,12 +88,14 @@ export default function ShipperProfilePage() {
 function ProfileForm({
   profile,
   queryClient,
+  setUser,
   onSuccess,
   onError,
   toastHost,
 }: {
   profile: ProfileResponse;
   queryClient: ReturnType<typeof useQueryClient>;
+  setUser: (user: ProfileResponse | null) => void;
   onSuccess: (msg: string) => void;
   onError: (msg: string) => void;
   toastHost: React.ReactNode;
@@ -82,19 +103,31 @@ function ProfileForm({
   const shipper: ShipperProfile = profile.shipperProfile ?? {};
   const [companyName, setCompanyName] = React.useState(shipper.companyName ?? "");
   const [bio, setBio] = React.useState(shipper.bio ?? "");
-  const [photoUrl, setPhotoUrl] = React.useState(shipper.profilePhotoUrl ?? "");
+  const [cropSrc, setCropSrc] = React.useState<string | null>(null);
+  const [crop, setCrop] = React.useState<Crop>();
+  const [completedCrop, setCompletedCrop] = React.useState<PixelCrop>();
+  const [isDragActive, setIsDragActive] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const imageRef = React.useRef<HTMLImageElement | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const initial = React.useMemo(
     () => ({
       companyName: shipper.companyName ?? "",
       bio: shipper.bio ?? "",
-      photoUrl: shipper.profilePhotoUrl ?? "",
     }),
-    [shipper.companyName, shipper.bio, shipper.profilePhotoUrl],
+    [shipper.companyName, shipper.bio],
   );
 
-  const isDirty =
-    companyName !== initial.companyName || bio !== initial.bio || photoUrl !== initial.photoUrl;
+  React.useEffect(() => {
+    return () => {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+    };
+  }, [cropSrc]);
+
+  const isDirty = companyName !== initial.companyName || bio !== initial.bio;
+  const hasPendingPhoto = Boolean(cropSrc && completedCrop?.width && completedCrop?.height);
 
   const companyError =
     companyName.length > COMPANY_MAX ? `Max ${COMPANY_MAX} characters` : undefined;
@@ -102,29 +135,95 @@ function ProfileForm({
   const hasError = Boolean(companyError || bioError);
 
   const mutation = useMutation({
-    mutationFn: () =>
-      updateShipperProfile({
+    mutationFn: async (): Promise<SaveProfileResult> => {
+      const shouldUploadPhoto = Boolean(cropSrc && completedCrop?.width && completedCrop?.height);
+      setUploadError(null);
+      setUploadProgress(shouldUploadPhoto ? 0 : null);
+
+      const savedProfile = await updateShipperProfile({
         companyName: companyName.trim() ? companyName.trim() : null,
         bio: bio.trim() ? bio.trim() : null,
-        profilePhotoUrl: photoUrl.trim() ? photoUrl.trim() : null,
-      }),
-    onSuccess: (data) => {
-      queryClient.setQueryData<ProfileResponse>(["users", "profile"], (prev) =>
-        prev ? { ...prev, shipperProfile: data.shipperProfile } : prev,
-      );
+      });
+      let nextProfile: ProfileResponse = savedProfile;
+      let photoUploaded = false;
+      let photoUploadError: string | null = null;
+
+      if (shouldUploadPhoto) {
+        try {
+          if (!imageRef.current || !completedCrop?.width || !completedCrop?.height) {
+            throw new Error("Choose a square crop before saving.");
+          }
+
+          const blob = await cropImageToBlob(imageRef.current, completedCrop);
+          const uploadedPhoto = await uploadProfilePhoto(blob, setUploadProgress);
+          nextProfile =
+            mergePhotoIntoProfile(
+              savedProfile,
+              savedProfile.shipperProfile ?? null,
+              uploadedPhoto.profilePhotoUrl,
+            ) ?? savedProfile;
+          photoUploaded = true;
+        } catch (error) {
+          photoUploadError = messageFromUploadError(error);
+        }
+      }
+
+      return { profile: nextProfile, photoUploaded, photoUploadError };
+    },
+    onSuccess: ({ profile: data, photoUploaded, photoUploadError }) => {
+      queryClient.setQueryData(["users", "profile"], data);
+      setUser(data);
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+
+      if (photoUploaded) {
+        setCropSrc(null);
+        setCrop(undefined);
+        setCompletedCrop(undefined);
+        setUploadProgress(100);
+        setUploadError(null);
+        onSuccess("Shipper profile and photo saved");
+        return;
+      }
+
+      if (photoUploadError) {
+        setUploadProgress(null);
+        setUploadError(photoUploadError);
+        onError("Profile saved, but photo upload failed");
+        return;
+      }
+
+      setUploadProgress(null);
       onSuccess("Profile saved");
     },
     onError: (err: unknown) => {
+      setUploadProgress(null);
       const message = err instanceof ApiResponseError ? err.message : "Failed to save profile";
       onError(message);
     },
   });
+
+  const canSave = (isDirty || hasPendingPhoto) && !hasError && !mutation.isPending;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (hasError) return;
     mutation.mutate();
   };
+
+  function handlePhotoFile(file: File | undefined) {
+    if (!file) return;
+    setUploadError(null);
+    if (!ALLOWED_PHOTO_TYPES.has(file.type)) {
+      setUploadError("Only JPEG, PNG, and WebP images are allowed.");
+      return;
+    }
+
+    setUploadProgress(null);
+    setCrop(undefined);
+    setCompletedCrop(undefined);
+    imageRef.current = null;
+    setCropSrc(URL.createObjectURL(file));
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
@@ -152,30 +251,40 @@ function ProfileForm({
       </section>
 
       <form className="mt-8 grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]" onSubmit={handleSubmit}>
-        <div className="fm-panel-muted rounded-lg p-4">
-          <SectionHeader label="Photo" />
-          <div className="mt-4 flex flex-col items-center gap-3">
-            <PhotoPreview url={photoUrl} />
-            <div className="w-full">
-              <label
-                className="mb-1 block font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500"
-                htmlFor="photo-url"
-              >
-                Photo URL
-              </label>
-              <Input
-                id="photo-url"
-                onChange={(e) => setPhotoUrl(e.target.value)}
-                placeholder="https://…"
-                type="url"
-                value={photoUrl}
-              />
-            </div>
-            <p className="font-mono text-[10px] leading-relaxed tracking-[0.12em] text-slate-500">
-              File upload lands in P1. URL works today.
-            </p>
-          </div>
-        </div>
+        <PhotoPanel
+          crop={crop}
+          cropSrc={cropSrc}
+          displayName={companyName || profile.email.split("@")[0] || "Shipper"}
+          fileInputRef={fileInputRef}
+          isDragActive={isDragActive}
+          isSaving={mutation.isPending}
+          photoUrl={resolveUploadedPhotoUrl(shipper.profilePhotoUrl)}
+          progress={uploadProgress}
+          uploadError={uploadError}
+          onCancelCrop={() => {
+            setCropSrc(null);
+            setCrop(undefined);
+            setCompletedCrop(undefined);
+            setUploadError(null);
+            setUploadProgress(null);
+          }}
+          onDropFile={handlePhotoFile}
+          onImageLoad={(event) => {
+            const image = event.currentTarget;
+            imageRef.current = image;
+            const nextCrop = centerCrop(
+              makeAspectCrop({ unit: "%", width: 86 }, 1, image.width, image.height),
+              image.width,
+              image.height,
+            );
+            setCrop(nextCrop);
+            setCompletedCrop(convertToPixelCrop(nextCrop, image.width, image.height));
+          }}
+          onPickFile={() => fileInputRef.current?.click()}
+          onSetCompletedCrop={setCompletedCrop}
+          onSetCrop={setCrop}
+          onSetDragActive={setIsDragActive}
+        />
 
         <div className="space-y-6">
           <div className="fm-panel-muted rounded-lg p-4">
@@ -230,10 +339,10 @@ function ProfileForm({
 
           <div className="flex items-center justify-end gap-3">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">
-              {isDirty ? "Unsaved changes" : "Up to date"}
+              {isDirty || hasPendingPhoto ? "Unsaved changes" : "Up to date"}
             </p>
             <Button
-              disabled={!isDirty || hasError || mutation.isPending}
+              disabled={!canSave}
               loading={mutation.isPending}
               type="submit"
               variant="primary"
@@ -250,23 +359,237 @@ function ProfileForm({
   );
 }
 
-function PhotoPreview({ url }: { url: string }) {
-  const trimmed = url.trim();
-  if (!trimmed) {
-    return (
-      <div className="flex h-32 w-32 items-center justify-center rounded-full border border-dashed border-slate-700 bg-slate-900/60 text-slate-600">
-        <ImagePlus className="h-6 w-6" aria-hidden="true" />
-      </div>
-    );
-  }
+function PhotoPanel({
+  crop,
+  cropSrc,
+  displayName,
+  fileInputRef,
+  isDragActive,
+  isSaving,
+  photoUrl,
+  progress,
+  uploadError,
+  onCancelCrop,
+  onDropFile,
+  onImageLoad,
+  onPickFile,
+  onSetCompletedCrop,
+  onSetCrop,
+  onSetDragActive,
+}: {
+  crop: Crop | undefined;
+  cropSrc: string | null;
+  displayName: string;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  isDragActive: boolean;
+  isSaving: boolean;
+  photoUrl: string | null;
+  progress: number | null;
+  uploadError: string | null;
+  onCancelCrop: () => void;
+  onDropFile: (file: File | undefined) => void;
+  onImageLoad: (event: React.SyntheticEvent<HTMLImageElement>) => void;
+  onPickFile: () => void;
+  onSetCompletedCrop: (crop: PixelCrop) => void;
+  onSetCrop: (crop: Crop) => void;
+  onSetDragActive: (active: boolean) => void;
+}) {
+  const initials = initialsFor(displayName);
+  const uploadProgress = progress ?? 0;
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      alt=""
-      className="h-32 w-32 rounded-full border border-slate-700 object-cover"
-      src={trimmed}
-    />
+    <section className="fm-panel-muted rounded-lg p-4">
+      <div className="flex items-center justify-between gap-3">
+        <SectionHeader label="Photo" />
+        <Camera className="h-4 w-4 text-amber-400" aria-hidden="true" />
+      </div>
+
+      <div className="mt-4 flex flex-col items-center gap-4">
+        <div className="relative h-36 w-36 overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt={displayName} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-slate-800 font-mono text-3xl font-black text-slate-300">
+              {initials}
+            </div>
+          )}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          className="sr-only"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(event) => {
+            onDropFile(event.currentTarget.files?.[0]);
+            event.currentTarget.value = "";
+          }}
+        />
+
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={onPickFile}
+          onDragEnter={(event) => {
+            event.preventDefault();
+            onSetDragActive(true);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            onSetDragActive(true);
+          }}
+          onDragLeave={() => onSetDragActive(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            onSetDragActive(false);
+            onDropFile(event.dataTransfer.files?.[0]);
+          }}
+          className={cn(
+            "fm-focus-ring flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-700 bg-slate-950/40 px-4 py-5 text-center transition-colors",
+            "hover:border-amber-400/70 hover:bg-amber-400/5",
+            isDragActive && "border-amber-400 bg-amber-400/10",
+            isSaving && "cursor-not-allowed opacity-55",
+          )}
+        >
+          <ImageUp className="h-5 w-5 text-amber-400" aria-hidden="true" />
+          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+            Drop photo or browse
+          </span>
+          <span className="text-xs text-slate-500">JPEG, PNG, or WebP</span>
+        </button>
+      </div>
+
+      {cropSrc ? (
+        <div className="mt-4 space-y-3 rounded-lg border border-slate-800 bg-slate-950/35 p-3">
+          <ReactCrop
+            aspect={1}
+            crop={crop}
+            minWidth={80}
+            onChange={(_, percentCrop) => onSetCrop(percentCrop)}
+            onComplete={(nextCrop) => onSetCompletedCrop(nextCrop)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={cropSrc}
+              alt="Crop selected profile photo"
+              onLoad={onImageLoad}
+              className="max-h-72 w-full object-contain"
+            />
+          </ReactCrop>
+          <div className="flex justify-center">
+            <Button size="sm" variant="ghost" onClick={onCancelCrop} disabled={isSaving}>
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {isSaving && progress !== null ? (
+        <div className="mt-4">
+          <div
+            role="progressbar"
+            aria-label="Photo upload progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={uploadProgress}
+            className="h-2 overflow-hidden rounded-full bg-slate-800"
+          >
+            <div
+              className="h-full rounded-full bg-amber-400 transition-[width]"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+          <p className="mt-2 text-right font-mono text-[10px] tabular-nums text-slate-400">
+            {uploadProgress}%
+          </p>
+        </div>
+      ) : null}
+
+      {uploadError ? (
+        <p
+          role="alert"
+          className="mt-4 rounded-md border border-[--color-danger]/45 bg-[--color-danger]/10 px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-red-200"
+        >
+          {uploadError}
+        </p>
+      ) : null}
+    </section>
   );
+}
+
+function mergePhotoIntoProfile(
+  profile: ProfileResponse | null,
+  shipperProfile: ShipperProfile | null,
+  profilePhotoUrl: string,
+): ProfileResponse | null {
+  if (!profile) return null;
+  return {
+    ...profile,
+    shipperProfile: {
+      ...(shipperProfile ?? {}),
+      profilePhotoUrl,
+    },
+  };
+}
+
+async function cropImageToBlob(image: HTMLImageElement, crop: PixelCrop): Promise<Blob> {
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+  const canvas = document.createElement("canvas");
+  canvas.width = PHOTO_OUTPUT_SIZE;
+  canvas.height = PHOTO_OUTPUT_SIZE;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not prepare image crop.");
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(
+    image,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    crop.width * scaleX,
+    crop.height * scaleY,
+    0,
+    0,
+    PHOTO_OUTPUT_SIZE,
+    PHOTO_OUTPUT_SIZE,
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Could not prepare image crop."));
+          return;
+        }
+        resolve(blob);
+      },
+      "image/webp",
+      0.92,
+    );
+  });
+}
+
+function messageFromUploadError(error: unknown): string {
+  if (error instanceof ApiResponseError) {
+    if (error.status === 413) return "Photo must be 5 MB or smaller.";
+    if (error.status === 415) return "Only JPEG, PNG, and WebP images are allowed.";
+    return error.message;
+  }
+  return error instanceof Error && error.message ? error.message : "Photo upload failed.";
+}
+
+function initialsFor(value: string): string {
+  return value
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("")
+    .padEnd(2, value.charAt(0).toUpperCase())
+    .slice(0, 2);
 }
 
 function PageSkeleton() {
