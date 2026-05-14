@@ -31,9 +31,9 @@ export default function NotFound() {
       </p>
       <Link
         className="fm-focus-ring mt-8 inline-flex items-center gap-2 rounded-md border border-amber-400 bg-amber-400 px-4 py-2.5 font-mono text-[11px] font-semibold tracking-[0.24em] text-slate-950 uppercase shadow-[0_0_24px_rgba(245,179,66,0.18)] transition-colors hover:border-amber-500 hover:bg-amber-500"
-        href="/"
+        href="/dashboard"
       >
-        Return to base
+        Return to dashboard
       </Link>
     </main>
   );
