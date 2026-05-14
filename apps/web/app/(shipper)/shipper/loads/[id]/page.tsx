@@ -565,7 +565,8 @@ function BidCard({
   const displayName = carrier?.email?.split("@")[0] ?? "Unknown carrier";
   const trustScore = carrierProfile?.trustScore;
   const rating = carrierProfile?.rating;
-  const avgEta = carrierProfile?.avgEtaHours;
+  const avgEta =
+    (carrierProfile?.completedShipments ?? 0) > 0 ? carrierProfile?.avgEtaHours : undefined;
 
   const isAccepted = bid.status === "Accepted";
   const isRejected = bid.status === "Rejected";
