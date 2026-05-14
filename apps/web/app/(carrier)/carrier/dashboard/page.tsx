@@ -119,6 +119,7 @@ export default function CarrierDashboardPage() {
   const winRate =
     recentBids.length > 0 ? Math.round((recentAcceptedBids / recentBids.length) * 100) : 0;
   const avgEtaHours = carrierProfile?.avgEtaHours ?? 0;
+  const hasAvgEta = (carrierProfile?.completedShipments ?? 0) > 0;
   const trustScore = clampScore(carrierProfile?.trustScore ?? 0);
   const profileLoaded = profileQuery.isSuccess || profileQuery.isError;
   const isProfileIncomplete =
@@ -153,7 +154,12 @@ export default function CarrierDashboardPage() {
       <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile label="Open bids" value={pendingBids} />
         <KpiTile label="Win rate" value={winRate} unit="%" />
-        <KpiTile label="Avg ETA" value={avgEtaHours} maximumFractionDigits={1} unit="h" />
+        <KpiTile
+          label="Avg ETA"
+          value={hasAvgEta ? avgEtaHours : null}
+          maximumFractionDigits={1}
+          unit="h"
+        />
         <TrustScoreTile value={trustScore} />
       </section>
 

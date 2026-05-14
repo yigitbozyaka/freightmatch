@@ -642,7 +642,7 @@ function StatsPanel({ profile }: { profile: CarrierProfile | null }) {
         />
         <StatBar
           label="Avg ETA"
-          value={profile?.avgEtaHours ?? 0}
+          value={(profile?.completedShipments ?? 0) > 0 ? (profile?.avgEtaHours ?? 0) : null}
           max={48}
           unit="h"
           maximumFractionDigits={1}
@@ -709,7 +709,11 @@ function ShipperPreviewCard({
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           <PreviewMetric label="Capacity" value={profile.capacityKg ?? 0} unit="kg" />
-          <PreviewMetric label="Avg ETA" value={profile.avgEtaHours ?? 0} unit="h" />
+          <PreviewMetric
+            label="Avg ETA"
+            value={(profile.completedShipments ?? 0) > 0 ? (profile.avgEtaHours ?? 0) : null}
+            unit="h"
+          />
           <PreviewMetric label="Done" value={profile.completedShipments ?? 0} />
         </div>
 
@@ -798,19 +802,23 @@ function StatBar({
   maximumFractionDigits?: number;
   tone: string;
   unit?: string;
-  value: number;
+  value: number | null;
 }) {
-  const pct = max > 0 ? Math.round((clamp(value, 0, max) / max) * 100) : 0;
+  const pct = value === null ? 0 : max > 0 ? Math.round((clamp(value, 0, max) / max) * 100) : 0;
   return (
     <div>
       <div className="flex items-end justify-between gap-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
-        <MonoNum
-          value={value}
-          unit={unit}
-          maximumFractionDigits={maximumFractionDigits}
-          className="text-sm text-slate-100"
-        />
+        {value === null ? (
+          <span className="font-mono tracking-[0.02em] tabular-nums text-sm text-slate-100">—</span>
+        ) : (
+          <MonoNum
+            value={value}
+            unit={unit}
+            maximumFractionDigits={maximumFractionDigits}
+            className="text-sm text-slate-100"
+          />
+        )}
       </div>
       <div
         role="progressbar"
@@ -826,11 +834,23 @@ function StatBar({
   );
 }
 
-function PreviewMetric({ label, unit, value }: { label: string; unit?: string; value: number }) {
+function PreviewMetric({
+  label,
+  unit,
+  value,
+}: {
+  label: string;
+  unit?: string;
+  value: number | null;
+}) {
   return (
     <div className="rounded border border-slate-800 bg-slate-950/40 px-2.5 py-2">
       <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <MonoNum value={value} unit={unit} maximumFractionDigits={unit === "h" ? 1 : 0} />
+      {value === null ? (
+        <span className="font-mono tracking-[0.02em] tabular-nums">—</span>
+      ) : (
+        <MonoNum value={value} unit={unit} maximumFractionDigits={unit === "h" ? 1 : 0} />
+      )}
     </div>
   );
 }
