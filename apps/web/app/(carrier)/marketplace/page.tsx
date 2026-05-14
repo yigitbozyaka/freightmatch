@@ -39,6 +39,7 @@ import {
 import { StatusPill } from "@/components/primitives/StatusPill";
 import * as loadsApi from "@/lib/api/loads";
 import type { Load } from "@/lib/api/loads";
+import { resolveUploadedPhotoUrl } from "@/lib/api/uploads";
 import { getProfile, getUserById, type ProfileResponse } from "@/lib/api/users";
 
 const CARGO_TYPES = ["General", "Refrigerated", "Hazmat", "Oversized", "Liquid"] as const;
@@ -438,13 +439,16 @@ function LoadCard({ load, shipper }: { load: Load; shipper?: ProfileResponse }) 
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-[11px]">
-        <span className="truncate font-mono text-slate-400">
-          <span className="text-slate-500">shipper · </span>
-          <span className="text-slate-200">{shipperName}</span>
+      <div className="mt-3 flex items-center justify-between gap-2 text-[11px]">
+        <span className="flex min-w-0 items-center gap-2">
+          <ShipperAvatar name={shipperName} photoUrl={shipper?.shipperProfile?.profilePhotoUrl} />
+          <span className="truncate font-mono text-slate-400">
+            <span className="text-slate-500">shipper · </span>
+            <span className="text-slate-200">{shipperName}</span>
+          </span>
         </span>
         <ArrowRight
-          className="h-3.5 w-3.5 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-400"
+          className="h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-400"
           aria-hidden="true"
         />
       </div>
@@ -513,6 +517,10 @@ function PinDrawer({ load, shipper }: { load: Load; shipper?: ProfileResponse })
           label="Shipper"
           value={
             <span className="inline-flex items-center gap-1.5">
+              <ShipperAvatar
+                name={shipperName}
+                photoUrl={shipper?.shipperProfile?.profilePhotoUrl}
+              />
               <span className="truncate">{shipperName}</span>
               {completed !== undefined ? (
                 <span className="inline-flex items-center gap-0.5 font-mono text-[11px] text-slate-400">
@@ -537,6 +545,29 @@ function PinDrawer({ load, shipper }: { load: Load; shipper?: ProfileResponse })
         </Button>
       </DrawerFooter>
     </>
+  );
+}
+
+function ShipperAvatar({ name, photoUrl }: { name: string; photoUrl: string | null | undefined }) {
+  const resolvedPhotoUrl = resolveUploadedPhotoUrl(photoUrl);
+  if (resolvedPhotoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={resolvedPhotoUrl}
+        alt={name}
+        className="h-6 w-6 shrink-0 rounded-full border border-slate-700 object-cover"
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-950 font-mono text-[10px] font-semibold text-amber-300"
+    >
+      {(name[0] ?? "S").toUpperCase()}
+    </span>
   );
 }
 

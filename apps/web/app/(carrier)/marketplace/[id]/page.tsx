@@ -37,6 +37,7 @@ import * as bidsApi from "@/lib/api/bids";
 import type { Bid, CreateBidInput } from "@/lib/api/bids";
 import * as loadsApi from "@/lib/api/loads";
 import type { Load } from "@/lib/api/loads";
+import { resolveUploadedPhotoUrl } from "@/lib/api/uploads";
 import { getProfile, getUserById, type ProfileResponse } from "@/lib/api/users";
 
 const MIN_PRICE = 1;
@@ -375,9 +376,7 @@ function ShipperPanel({
     <section className="fm-panel-muted rounded-lg p-4">
       <SectionHeader label="Shipper" />
       <div className="mt-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-950 font-mono text-sm font-semibold text-amber-300">
-          {(display[0] ?? "S").toUpperCase()}
-        </div>
+        <ShipperAvatar name={display} photoUrl={shipper?.shipperProfile?.profilePhotoUrl} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-100">{display}</p>
           <p className="truncate font-mono text-[11px] text-slate-500">
@@ -392,6 +391,29 @@ function ShipperPanel({
         ) : null}
       </div>
     </section>
+  );
+}
+
+function ShipperAvatar({ name, photoUrl }: { name: string; photoUrl: string | null | undefined }) {
+  const resolvedPhotoUrl = resolveUploadedPhotoUrl(photoUrl);
+  if (resolvedPhotoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={resolvedPhotoUrl}
+        alt={name}
+        className="h-10 w-10 shrink-0 rounded-md border border-slate-700 object-cover"
+      />
+    );
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-950 font-mono text-sm font-semibold text-amber-300"
+    >
+      {(name[0] ?? "S").toUpperCase()}
+    </div>
   );
 }
 
