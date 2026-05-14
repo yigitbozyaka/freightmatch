@@ -4,6 +4,7 @@ import path from 'path';
 import helmet from 'helmet';
 import cors from 'cors';
 import { connectDB, isDBConnected } from './config/db';
+import { startConsumer, disconnectConsumer } from './kafka/consumer';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import carrierRoutes from './routes/carrier.routes';
@@ -90,7 +91,16 @@ app.use((err: Error & { statusCode?: number; errorCode?: string }, _req: Request
 
 connectDB().then(() => {
   logger.info('user-service connected to MongoDB');
+  startConsumer().catch((err) => logger.error('Failed to start Kafka consumer', { error: err }));
   app.listen(Number(env.PORT), () => {
     logger.info(`user-service running on port ${env.PORT}`);
   });
 });
+
+async function shutdown() {
+  logger.info('user-service shutting down');
+  await disconnectConsumer();
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

@@ -11,9 +11,12 @@ COPY shared/instrumentation/package.json shared/instrumentation/
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY tsconfig.base.json ./
 COPY services/user-service/tsconfig.json services/user-service/
+COPY shared/contracts/tsconfig.json shared/contracts/
 COPY shared/instrumentation/tsconfig.json shared/instrumentation/
 COPY services/user-service/src services/user-service/src
+COPY shared/contracts shared/contracts
 COPY shared/instrumentation shared/instrumentation
+RUN pnpm --filter @freightmatch/contracts build
 RUN pnpm --filter @freightmatch/instrumentation build
 RUN pnpm --filter @freightmatch/user-service build
 
@@ -27,6 +30,7 @@ COPY services/bidding-service/package.json services/bidding-service/
 COPY services/matching-service/package.json services/matching-service/
 COPY shared/contracts/package.json shared/contracts/
 COPY shared/instrumentation/package.json shared/instrumentation/
+COPY --from=builder /app/shared/contracts/dist shared/contracts/dist
 COPY --from=builder /app/shared/instrumentation/dist shared/instrumentation/dist
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 WORKDIR /app/services/user-service

@@ -8,6 +8,7 @@ export interface ICarrierProfile {
   homeCity: string;
   rating: number;
   completedShipments: number;
+  onTimeDeliveries: number;
   profilePhotoUrl: string | null;
   avgEtaHours: number;
   trustScore: number;
@@ -89,6 +90,11 @@ const userSchema = new Schema<IUser>(
           max: 5,
         },
         completedShipments: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        onTimeDeliveries: {
           type: Number,
           default: 0,
           min: 0,

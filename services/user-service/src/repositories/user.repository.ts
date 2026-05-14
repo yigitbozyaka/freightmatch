@@ -1,4 +1,5 @@
 import { User, IUser, ICarrierProfile, IShipperProfile } from '../models/user.model';
+import { computeTrustScore } from '../utils/trust-score.util';
 
 export class UserRepository {
   async findByEmail(email: string): Promise<IUser | null> {
@@ -64,6 +65,39 @@ export class UserRepository {
 
   async findCarrierById(id: string): Promise<IUser | null> {
     return User.findOne({ _id: id, role: 'Carrier' }).select('-passwordHash');
+  }
+
+  async recordDelivery(carrierId: string, onTime: boolean, actualHours: number): Promise<IUser | null> {
+    const doc = await User.findByIdAndUpdate(
+      carrierId,
+      {
+        $inc: {
+          'carrierProfile.completedShipments': 1,
+          'carrierProfile.onTimeDeliveries': onTime ? 1 : 0,
+        },
+      },
+      { new: true },
+    );
+
+    if (!doc || !doc.carrierProfile) return doc;
+
+    const n = doc.carrierProfile.completedShipments;
+    const newAvg = Math.round(((doc.carrierProfile.avgEtaHours * (n - 1) + actualHours) / n) * 10) / 10;
+    const onTimeRate = doc.carrierProfile.onTimeDeliveries / n;
+    const rating = Math.round(onTimeRate * 5 * 10) / 10;
+    const trustScore = computeTrustScore({ rating, onTimeRate, completedCount: n });
+
+    return User.findByIdAndUpdate(
+      carrierId,
+      {
+        $set: {
+          'carrierProfile.avgEtaHours': newAvg,
+          'carrierProfile.rating': rating,
+          'carrierProfile.trustScore': trustScore,
+        },
+      },
+      { new: true },
+    );
   }
 
   async updateLoginAttempts(

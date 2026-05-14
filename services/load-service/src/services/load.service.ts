@@ -1,4 +1,4 @@
-﻿import { KAFKA_TOPICS } from '@freightmatch/contracts';
+import { KAFKA_TOPICS } from '@freightmatch/contracts';
 import { loadRepository } from '../repositories/load.repository';
 import { ErrorCode, LoadUpdateData } from '../types';
 import { LoadStatus, VALID_TRANSITIONS } from '../models/load.model';
@@ -135,7 +135,31 @@ export class LoadService {
       error.errorCode = ErrorCode.FORBIDDEN;
       throw error;
     }
-    return this.transitionStatus(loadId, 'Delivered');
+
+    this.validateTransition(load.status, 'Delivered');
+
+    const postedEntry = load.statusHistory.find((h) => h.to === 'Posted');
+    const postedAt = postedEntry ? new Date(postedEntry.timestamp) : load.createdAt;
+    const onTime = Date.now() - postedAt.getTime() <= load.deadlineHours * 3_600_000;
+
+    const inTransitEntry = load.statusHistory.find((h) => h.to === 'InTransit');
+    const inTransitAt = inTransitEntry ? new Date(inTransitEntry.timestamp) : null;
+    const actualHours = inTransitAt
+      ? Math.round(((Date.now() - inTransitAt.getTime()) / 3_600_000) * 10) / 10
+      : load.deadlineHours;
+
+    const updated = await loadRepository.updateStatus(loadId, load.status, 'Delivered');
+
+    await publishEvent(KAFKA_TOPICS.LOAD_DELIVERED, {
+      eventType: KAFKA_TOPICS.LOAD_DELIVERED,
+      loadId,
+      carrierId,
+      onTime,
+      actualHours,
+      timestamp: new Date().toISOString(),
+    });
+
+    return updated;
   }
 
   private validateTransition(currentStatus: LoadStatus, newStatus: LoadStatus): void {

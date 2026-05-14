@@ -79,6 +79,13 @@ export class UserService {
     return this.toCarrierResponse(carrier);
   }
 
+  async recordDelivery(carrierId: string, onTime: boolean, actualHours: number) {
+    const result = await userRepository.recordDelivery(carrierId, onTime, actualHours);
+    if (!result) {
+      console.log(`recordDelivery: carrier ${carrierId} not found, skipping`);
+    }
+  }
+
   private toCarrierResponse(user: IUser): CarrierResponse {
     return {
       id: user._id.toString(),
