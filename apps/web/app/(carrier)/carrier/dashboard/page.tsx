@@ -400,7 +400,10 @@ function PickupTimelineItem({ item }: { item: PickupItem }) {
 
 function LoadRecommendationCard({ load }: { load: Load }) {
   return (
-    <article className="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
+    <Link
+      href={`/marketplace/${load._id}`}
+      className="block rounded-lg border border-slate-800 bg-slate-900/70 p-3 transition-colors hover:border-amber-400/40 hover:bg-slate-900"
+    >
       <RouteMap destination={load.destination} height="138px" interactive origin={load.origin} />
       <div className="mt-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -423,7 +426,7 @@ function LoadRecommendationCard({ load }: { load: Load }) {
           <span className="truncate">{load.deadlineHours}h</span>
         </p>
       </div>
-    </article>
+    </Link>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LogOut, Settings as SettingsIcon, UserCircle } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 
@@ -20,15 +21,34 @@ export function Navbar() {
           backgroundColor: "color-mix(in srgb, var(--color-go) 10%, transparent)",
         };
 
+  const dashboardHref = user?.role === "Carrier" ? "/carrier/dashboard" : "/shipper/dashboard";
+
   return (
-    <header className="h-12 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm flex items-center px-6 gap-4">
+    <header className="relative z-40 flex h-12 items-center gap-4 border-b border-slate-800 bg-slate-900/80 px-6 backdrop-blur-sm">
       <Link
-        href="/"
+        href={user ? dashboardHref : "/"}
         className="font-mono text-sm font-semibold text-slate-100 tracking-tight"
         style={{ fontFamily: "var(--font-display)" }}
       >
         Freight<span className="text-amber-400">Match</span>
       </Link>
+
+      {user && (
+        <nav className="hidden sm:flex items-center gap-1 ml-4">
+          {user.role === "Carrier" ? (
+            <>
+              <NavLink href="/carrier/dashboard" label="Dashboard" />
+              <NavLink href="/marketplace" label="Marketplace" />
+              <NavLink href="/bids" label="My Bids" />
+            </>
+          ) : (
+            <>
+              <NavLink href="/shipper/dashboard" label="Dashboard" />
+              <NavLink href="/shipper/loads" label="My Loads" />
+            </>
+          )}
+        </nav>
+      )}
 
       <span className="flex-1" />
 
@@ -150,6 +170,24 @@ function MenuLink({
       role="menuitem"
     >
       {icon}
+      {label}
+    </Link>
+  );
+}
+
+function NavLink({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname();
+  const isActive = pathname === href || pathname.startsWith(href + "/");
+
+  return (
+    <Link
+      href={href}
+      className={`rounded px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] transition-colors ${
+        isActive
+          ? "bg-amber-400/15 text-amber-300"
+          : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+      }`}
+    >
       {label}
     </Link>
   );
