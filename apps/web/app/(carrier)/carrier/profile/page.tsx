@@ -104,6 +104,8 @@ export default function CarrierProfilePage() {
   const carrierProfile = profile?.carrierProfile ?? null;
   const displayName = profile?.email.split("@")[0] ?? "Carrier";
 
+  const [formReady, setFormReady] = React.useState(false);
+
   const {
     control,
     formState: { errors, isDirty, isValid },
@@ -118,9 +120,10 @@ export default function CarrierProfilePage() {
   });
 
   React.useEffect(() => {
-    if (!profileQuery.data || isDirty) return;
+    if (formReady || !profileQuery.data) return;
     reset(valuesFromProfile(profileQuery.data.carrierProfile ?? null));
-  }, [isDirty, profileQuery.data, reset]);
+    setFormReady(true);
+  }, [formReady, profileQuery.data, reset]);
 
   React.useEffect(() => {
     return () => {
@@ -218,7 +221,7 @@ export default function CarrierProfilePage() {
     setCropSrc(URL.createObjectURL(file));
   }
 
-  if (profileQuery.isLoading) {
+  if (profileQuery.isLoading || !formReady) {
     return <ProfileSkeleton />;
   }
 
@@ -545,10 +548,7 @@ function DetailsPanel({
             control={control}
             name="truckType"
             render={({ field }) => (
-              <Select
-                value={isTruckType(field.value) ? field.value : ""}
-                onValueChange={field.onChange}
-              >
+              <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger id="carrier-truck-type">
                   <SelectValue placeholder="Select your type" />
                 </SelectTrigger>
