@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { loadController } from '../controllers/load.controller';
 import { authenticate, authorize, authenticateOrInternal } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
@@ -41,6 +41,20 @@ router.patch(
   authorize('Shipper'),
   validate(updateStatusSchema),
   loadController.updateStatus
+);
+
+router.post(
+  '/:id/confirm-pickup',
+  authenticate,
+  authorize('Carrier'),
+  loadController.confirmPickup
+);
+
+router.post(
+  '/:id/confirm-delivery',
+  authenticate,
+  authorize('Carrier'),
+  loadController.confirmDelivery
 );
 
 router.patch(

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import { loadService } from '../services/load.service';
 import { AuthRequest } from '../types';
 
@@ -62,6 +62,28 @@ export class LoadController {
       const filters = req.query as { origin?: string; destination?: string; cargoType?: string };
       const loads = await loadService.getAvailableLoads(filters);
       res.status(200).json(loads);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async confirmPickup(req: AuthRequest & { params: { id: string } }, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new Error('Unauthorized');
+
+      const load = await loadService.confirmPickup(req.params.id, req.user.userId);
+      res.status(200).json(load);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async confirmDelivery(req: AuthRequest & { params: { id: string } }, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new Error('Unauthorized');
+
+      const load = await loadService.confirmDelivery(req.params.id, req.user.userId);
+      res.status(200).json(load);
     } catch (error) {
       next(error);
     }

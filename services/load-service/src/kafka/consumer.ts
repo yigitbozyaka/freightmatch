@@ -1,4 +1,4 @@
-import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
+﻿import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
 import { KAFKA_TOPICS } from '@freightmatch/contracts';
 import { env } from '../config/env';
 import { loadService } from '../services/load.service';
@@ -28,8 +28,8 @@ export async function startConsumer(): Promise<void> {
         const event = JSON.parse(message.value.toString());
         console.log('Received bid.accepted event:', JSON.stringify(event));
 
-        await loadService.transitionStatus(event.loadId, 'InTransit');
-        console.log(`Load ${event.loadId} transitioned to InTransit via bid.accepted`);
+        await loadService.matchLoad(event.loadId, event.carrierId);
+        console.log(`Load ${event.loadId} matched to carrier ${event.carrierId} via bid.accepted`);
       } catch (error) {
         console.error('Error processing bid.accepted event:', error);
       }

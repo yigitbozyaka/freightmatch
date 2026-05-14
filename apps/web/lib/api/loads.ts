@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import { apiFetch } from "./client";
 
 const LoadStatusSchema = z.enum([
@@ -13,6 +13,7 @@ const LoadStatusSchema = z.enum([
 const LoadSchema = z.object({
   _id: z.string(),
   shipperId: z.string().optional(),
+  carrierId: z.string().optional(),
   title: z.string(),
   origin: z.string(),
   destination: z.string(),
@@ -97,5 +98,15 @@ export async function update(id: string, input: UpdateLoadInput): Promise<Load> 
     method: "PATCH",
     body: JSON.stringify(input),
   });
+  return LoadSchema.parse(data);
+}
+
+export async function confirmPickup(id: string): Promise<Load> {
+  const data = await apiFetch<unknown>(`api/loads/${id}/confirm-pickup`, { method: "POST" });
+  return LoadSchema.parse(data);
+}
+
+export async function confirmDelivery(id: string): Promise<Load> {
+  const data = await apiFetch<unknown>(`api/loads/${id}/confirm-delivery`, { method: "POST" });
   return LoadSchema.parse(data);
 }
