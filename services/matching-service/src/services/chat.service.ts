@@ -2,7 +2,7 @@ import { env } from '../config/env';
 import { logger } from '@freightmatch/instrumentation';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'anthropic/claude-3.5-haiku';
+const MODEL = 'openai/gpt-oss-120b';
 
 const SYSTEM_PROMPT = `You are FreightMatch AI Assistant, an intelligent chatbot for a freight logistics platform. You help shippers and carriers with:
 

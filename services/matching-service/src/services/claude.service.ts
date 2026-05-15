@@ -2,7 +2,7 @@ import { env } from '../config/env';
 import { CarrierResponse, CarrierRecommendation, LoadCreatedEvent } from '../types';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'anthropic/claude-3.5-haiku';
+const MODEL = 'openai/gpt-oss-120b';
 
 function buildPrompt(load: LoadCreatedEvent, carriers: CarrierResponse[]): string {
   const carrierList = carriers
