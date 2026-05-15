@@ -61,7 +61,7 @@ export async function chat(
       const errorBody = await response.text();
       logger.error('OpenRouter chat API error', { status: response.status, body: errorBody });
       return {
-        reply: 'I apologize, but I am temporarily unavailable. Please try again in a moment.',
+        reply: `Upstream chat error (${response.status}): ${errorBody.slice(0, 500)}`,
         model: MODEL,
         tokensUsed: 0,
       };
@@ -82,8 +82,9 @@ export async function chat(
     };
   } catch (error) {
     logger.error('Chat service error', { error });
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     return {
-      reply: 'I apologize, but I encountered an error. Please try again later.',
+      reply: `Chat service error: ${detail.slice(0, 500)}`,
       model: MODEL,
       tokensUsed: 0,
     };
